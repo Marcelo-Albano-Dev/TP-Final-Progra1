@@ -22,10 +22,10 @@ void listarVideojuegosResumen();
 void listarVideojuegosPorPlataforma();
 void verDetalleVideojuego(int idJuego);
 
-/* Funciones que van a llamar Daniel y Tomi desde sus archivos
+// Funciones que van a llamar Dani y Tomi desde sus archivos
 int buscarVideojuegoPorId(int idJuego, Videojuego *juegoEncontrado);
 int actualizarStockVideojuego(int idJuego, int deltaStock);
-int obtenerUltimoIdVideojuego();*/
+int obtenerUltimoIdVideojuego();
 
 // Punto de promoción (Devoluciones)
 void registrarDevolucion();
