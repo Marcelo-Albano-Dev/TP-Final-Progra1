@@ -2,5 +2,5 @@
 #include "../include/transaccion.h"
 
 void menuTransacciones() {
-    printf("\n[Modulo Transacciones - En desarrollo]\n");
+    printf("\n[Mciones - En desarrollo]\n");
 }
