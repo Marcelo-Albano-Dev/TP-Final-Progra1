@@ -10,6 +10,7 @@ void menuPersonas();
 int existePersonaPorDni(char dni[]);
 void altaPersona();
 void modificarPersonaPorDni(char dni[]);
+void bajaLogicaPersona(char dni[]);
 void listarPersonasResumen();
 void mostrarPersonaDetallada(char dni[]);
 
