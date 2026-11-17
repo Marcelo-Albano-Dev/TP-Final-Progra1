@@ -10,6 +10,9 @@ void limpiarBufferPersona() {
 void menuPersonas() {
     int opcion;
     char dniBuscado[15];
+    Usuario usuarioActivo;
+
+    inicializarAdminPorDefecto();
 
     do {
         system("cls || clear");
@@ -21,11 +24,12 @@ void menuPersonas() {
         printf("3. Dar de baja a una Persona\n");
         printf("4. Ver Listado Resumen de Personas\n");
         printf("5. Buscar Persona por DNI (Detalle)\n");
-        printf("0. Volver al Menu Principal\n");
         printf("------------------------------------\n");
         printf("6. Registrar Usuario (Empleados)\n");
         printf("7. Ver Listado de Usuarios\n");
         printf("8. Probar Inicio de Sesion (Login)\n");
+        printf("------------------------------------\n");
+        printf("9. Consultar Estado VIP de Cliente\n");
         printf("0. Volver al Menu Principal\n");
         printf("------------------------------------\n");
         printf("Ingrese una opcion: ");
@@ -71,6 +75,12 @@ void menuPersonas() {
                     printf("\nUsuario o contrasenia incorrectos.\n");
                 }
                 break;
+            case 9:
+                printf("\nIngrese el DNI del cliente: ");
+                fgets(dniBuscado, 15, stdin);
+                dniBuscado[strcspn(dniBuscado, "\n")] = '\0';
+                mostrarEstadoVipCliente(dniBuscado);
+                break;
             case 0:
                 break;
             default:
@@ -101,6 +111,26 @@ int existePersonaPorDni(char dni[]) {
 
     return existe;
 }
+
+// Busca una persona activa por DNI y copia sus datos en el puntero recibido
+int buscarPersonaPorDni(char dni[], Persona *encontrada) {
+    FILE *arch = fopen(ARCH_PERSONAS, "rb");
+    Persona aux;
+    int hallada = 0;
+
+    if (arch != NULL) {
+        while (fread(&aux, sizeof(Persona), 1, arch) == 1 && hallada == 0) {
+            if (strcmp(aux.dni, dni) == 0 && strcmp(aux.rol, "baja") != 0) {
+                *encontrada = aux;
+                hallada = 1;
+            }
+        }
+        fclose(arch);
+    }
+
+    return hallada;
+}
+
 // Solicita los datos de una nueva persona, valida unicidad de DNI y persiste el registro
 void altaPersona() {
     Persona nueva;
@@ -420,3 +450,83 @@ int iniciarSesion(Usuario *usuarioLogueado) {
     return acceso;
 }
 
+// Recorre recursivamente el archivo de transacciones sumando las compras de un cliente
+float calcularTotalComprasRecursivo(FILE *arch, char dniCliente[]) {
+    Transaccion t;
+    float subtotal = 0.0;
+
+    // Caso base: si fread devuelve 0, se alcanzo el fin del archivo y corta la recursion
+    if (fread(&t, sizeof(Transaccion), 1, arch) == 0) {
+        return 0.0;
+    }
+
+    // Si la transaccion pertenece al cliente buscado, calcula el monto de esa venta
+    if (strcmp(t.dniCliente, dniCliente) == 0) {
+        subtotal = t.precioUnitarioVenta * t.cantidadVendida;
+    }
+
+    // Suma el subtotal actual con el resultado del resto del archivo
+    return subtotal + calcularTotalComprasRecursivo(arch, dniCliente);
+}
+
+// Abre transacciones.dat, invoca la suma recursiva y devuelve el porcentaje de descuento
+float calcularDescuentoVipCliente(char dniCliente[]) {
+    FILE *arch = fopen(ARCH_TRANSACCIONES, "rb");
+    float totalGastado = 0.0;
+    float descuento = 0.0;
+
+    // Si el archivo de transacciones ya existe, calcula el acumulado recursivamente
+    if (arch != NULL) {
+        totalGastado = calcularTotalComprasRecursivo(arch, dniCliente);
+        fclose(arch);
+    }
+
+    // Asigna el porcentaje de descuento segun el monto historico alcanzado
+    if (totalGastado >= 300000.0) {
+        descuento = 0.15; // Nivel Oro (15%)
+    } else if (totalGastado >= 150000.0) {
+        descuento = 0.10; // Nivel Plata (10%)
+    } else if (totalGastado >= 50000.0) {
+        descuento = 0.05; // Nivel Bronce (5%)
+    }
+
+    return descuento;
+}
+
+// Verifica que el cliente exista y muestra por pantalla su categoria VIP y descuento
+void mostrarEstadoVipCliente(char dniCliente[]) {
+    Persona cliente;
+    FILE *arch;
+    float totalGastado = 0.0;
+    float descuento = 0.0;
+
+    // Valida que el DNI corresponda a una persona activa registrada
+    if (buscarPersonaPorDni(dniCliente, &cliente) == 0) {
+        printf("\nNo se encontro un cliente activo con el DNI %s.\n", dniCliente);
+        return;
+    }
+
+    // Obtiene el monto total gastado recorriendo el archivo de ventas
+    arch = fopen(ARCH_TRANSACCIONES, "rb");
+    if (arch != NULL) {
+        totalGastado = calcularTotalComprasRecursivo(arch, dniCliente);
+        fclose(arch);
+    }
+
+    // Obtiene el porcentaje correspondiente segun el total calculado
+    descuento = calcularDescuentoVipCliente(dniCliente);
+
+    printf("\n--- ESTADO DE FIDELIZACION VIP ---\n");
+    printf("Cliente: %s (DNI: %s)\n", cliente.nombre, cliente.dni);
+    printf("Total historico comprado: $%.2f\n", totalGastado);
+
+    if (descuento >= 0.15) {
+        printf("Categoria: ORO (15%% de descuento)\n");
+    } else if (descuento >= 0.10) {
+        printf("Categoria: PLATA (10%% de descuento)\n");
+    } else if (descuento >= 0.05) {
+        printf("Categoria: BRONCE (5%% de descuento)\n");
+    } else {
+        printf("Categoria: GENERAL (Sin descuento acumulado aun)\n");
+    }
+}

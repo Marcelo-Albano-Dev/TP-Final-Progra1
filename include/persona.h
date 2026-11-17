@@ -8,6 +8,7 @@ void menuPersonas();
 
 // CRUD Base de Personas
 int existePersonaPorDni(char dni[]);
+int buscarPersonaPorDni(char dni[], Persona *encontrada);
 void altaPersona();
 void modificarPersonaPorDni(char dni[]);
 void bajaLogicaPersona(char dni[]);
@@ -20,5 +21,10 @@ int existeNombreUsuario(char nombreUsuario[]);
 void altaUsuario();
 void listarUsuarios();
 int iniciarSesion(Usuario *usuarioLogueado);
+
+// Funciones de Fidelizacion VIP (Recursividad sobre archivo)
+float calcularTotalComprasRecursivo(FILE *arch, char dniCliente[]);
+float calcularDescuentoVipCliente(char dniCliente[]);
+void mostrarEstadoVipCliente(char dniCliente[]);
 
 #endif
