@@ -3,7 +3,10 @@
 
 #include "estructuras.h"
 
-// Estructura auxiliar para tu punto de promoción
+#define ARCHIVO_DEVOLUCIONES "data/devoluciones.dat"
+#define MARGEN_GANANCIA 1.30f
+
+// Estructura auxiliar para devoluciones
 typedef struct stDevolucion {
     int idDevolucion;
     int idTransaccionAnulada;
@@ -13,24 +16,26 @@ typedef struct stDevolucion {
     char motivo[100];
 } Devolucion;
 
-// Menú de tu módulo
+// Menu principal del modulo
 void menuVideojuegos();
 
-// Puntos obligatorios (3e, 3f, 3g) + Alta
+// Alta, modificacion, baja logica y consultas
 void cargarVideojuego();
+void modificarVideojuego(int idJuego);
+void bajaLogicaVideojuego(int idJuego);
 void listarVideojuegosResumen();
 void listarVideojuegosPorPlataforma();
 void verDetalleVideojuego(int idJuego);
 
-// Funciones que van a llamar Dani y Tomi desde sus archivos
-int buscarVideojuegoPorId(int idJuego, Videojuego *juegoEncontrado);
+// Funciones compartidas para Transacciones y Reportes
+int buscarVideojuegoPorId(int idJuego, Videojuego *JuegoEncontrado);
 int actualizarStockVideojuego(int idJuego, int cambioStock);
 int obtenerUltimoIdVideojuego();
 
-// Punto de promoción (Devoluciones)
+// Devoluciones
 void registrarDevolucion();
 void listarDevoluciones();
 int transaccionYaDevuelta(int idTransaccion);
 int obtenerUltimoIdDevolucion();
 
-#endif // VIDEOJUEGO_H// VIDEOJUEGO_H
+#endif // VIDEOJUEGO_H
