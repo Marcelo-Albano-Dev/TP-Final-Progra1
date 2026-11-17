@@ -1,67 +1,98 @@
 #include <stdio.h>
-#include  <stdlib.h>
-#include  <string.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include "../include/videojuego.h"
 
-#include <ctype.h>
+void limpiarBufferVideojuego() {
+    while (getchar() != '\n');
+}
 
-//DEFINE'S
-#define ARCHIVO_VIDEOJUEGOS "videojuegos.bin"
-#define ARCHIVO_DEVOLUCIONES "devoluciones.bin"
-#define MARGEN_GANACIA 1.30f
+void pasarAMayusculas(char destino[], char origen[]) {
+    int i = 0;
+    while (origen[i] != '\0') {
+        destino[i] = toupper((unsigned char)origen[i]);
+        i++;
+    }
+    destino[i] = '\0';
+}
 
-// MAIN DE VIDEOJUEGOS
+// MENU DE VIDEOJUEGOS
 void menuVideojuegos() {
-
     int opc = 0;
     int idBusqueda = 0;
 
     do {
-        printf("=== MENU DE GESTION Y DEVOLUCINES [AyrtonC] === \n");
-        printf("1. Ingresar / agregar nuevo videojuego \n");
-        printf("2. Ver lista de videojuegos \n");
-        printf("3. Buscar videojuego por plataforma\n");
-        printf("4. Ver Detalle completo de un videojuego (PERMISOS DE ADMIN) \n");
-        printf("5. Registrar devolucion de venta (Devolucion) \n");
-        printf("6. Ver historial de devoluciones \n");
-        printf("0. VOLVER AL MENU PRINCIPAL \n");
-        printf("[#] SELECCIONES UNA OPCION [#]:  \n");
-        scanf("%i",&opc);
+        system("cls || clear");
+        printf("=== MENU DE GESTION Y DEVOLUCIONES ===\n");
+        printf("1. Ingresar / agregar nuevo videojuego\n");
+        printf("2. Modificar datos de un videojuego\n");
+        printf("3. Dar de baja logica a un videojuego\n");
+        printf("4. Ver lista de videojuegos\n");
+        printf("5. Buscar videojuego por plataforma\n");
+        printf("6. Ver detalle completo de un videojuego (Admin)\n");
+        printf("7. Registrar devolucion de venta\n");
+        printf("8. Ver historial de devoluciones\n");
+        printf("0. VOLVER AL MENU PRINCIPAL\n");
+        printf("[#] SELECCIONE UNA OPCION [#]: ");
+        scanf("%d", &opc);
+        limpiarBufferVideojuego();
+
         switch (opc) {
             case 1:
                 cargarVideojuego();
                 break;
-                case 2:
+            case 2:
+                printf("\nIngrese el ID del videojuego a modificar: ");
+                scanf("%d", &idBusqueda);
+                limpiarBufferVideojuego();
+                modificarVideojuego(idBusqueda);
+                break;
+            case 3:
+                printf("\nIngrese el ID del videojuego a dar de baja: ");
+                scanf("%d", &idBusqueda);
+                limpiarBufferVideojuego();
+                bajaLogicaVideojuego(idBusqueda);
+                break;
+            case 4:
                 listarVideojuegosResumen();
                 break;
-                case 3:
+            case 5:
                 listarVideojuegosPorPlataforma();
                 break;
-                case 4:
-                printf("Ingrese el ID del videojuego: ");
+            case 6:
+                printf("\nIngrese el ID del videojuego: ");
                 scanf("%d", &idBusqueda);
+                limpiarBufferVideojuego();
                 verDetalleVideojuego(idBusqueda);
                 break;
-                case 5:
+            case 7:
                 registrarDevolucion();
                 break;
-                case 6:
+            case 8:
                 listarDevoluciones();
                 break;
-                case 0:
-                printf("volviendo al menu principal \n");
+            case 0:
+                printf("\nVolviendo al menu principal...\n");
                 break;
-                default:
-                printf("Opcion no valida, Seleccione una opcion valida \n");
+            default:
+                printf("\n[!] Opcion no valida, seleccione una opcion valida.\n");
         }
-    }while(opc!=0);
+
+        if (opc != 0) {
+            printf("\nPresione ENTER para continuar...");
+            getchar();
+        }
+    } while (opc != 0);
 }
-// P1
-int obtenerUltimoIdDevolicion() {
-    FILE *file = fopen(ARCHIVO_VIDEOJUEGOS, "rb");
+
+// P1: Obtiene el ultimo ID de videojuego guardado para autoincrementar
+int obtenerUltimoIdVideojuego() {
+    FILE *file = fopen(ARCH_VIDEOJUEGOS, "rb");
     if (file == NULL) {
         return 0;
     }
+
     Videojuego aux;
     int ultimoId = 0;
 
@@ -76,120 +107,220 @@ int obtenerUltimoIdDevolicion() {
     return ultimoId;
 }
 
-void cargarVideojuego () {
-    FILE *file = fopen(ARCHIVO_VIDEOJUEGOS, "ab");
-
+// Alta de un nuevo videojuego en el archivo binario
+void cargarVideojuego() {
+    FILE *file = fopen(ARCH_VIDEOJUEGOS, "ab");
     if (file == NULL) {
+        printf("\n[!] ERROR | No se pudo abrir el archivo de videojuegos.\n");
         return;
     }
 
     Videojuego nuevoJuego;
-    nuevoJuego.idJuego = obtenerUltimoIdDevolicion() + 1;
+    nuevoJuego.idJuego = obtenerUltimoIdVideojuego() + 1;
 
-    printf("\n ------------------------------------------ \n");
-    printf("\n === Registrar un nuevo juego [ID asignado: %d] === \n",nuevoJuego.idJuego);
-    printf("\n ------------------------------------------ \n");
+    printf("\n------------------------------------------\n");
+    printf("=== Registrar un nuevo juego [ID asignado: %d] ===\n", nuevoJuego.idJuego);
+    printf("------------------------------------------\n");
 
-    printf("Ingrese el titulo del videojuego: \n");
-    fflush(stdin);
+    printf("Ingrese el titulo del videojuego: ");
     fgets(nuevoJuego.titulo, sizeof(nuevoJuego.titulo), stdin);
     nuevoJuego.titulo[strcspn(nuevoJuego.titulo, "\n")] = '\0';
 
-    printf("Ingrese plataforma [PC]- [XBOX]-[PLAYSTATION]-[NINTENDO]: ");
-    fflush(stdin);
-    fgets(nuevoJuego.plataforma, sizeof(nuevoJuego.plataforma),stdin);
+    printf("Ingrese plataforma [PC] - [XBOX] - [PLAYSTATION] - [NINTENDO]: ");
+    fgets(nuevoJuego.plataforma, sizeof(nuevoJuego.plataforma), stdin);
     nuevoJuego.plataforma[strcspn(nuevoJuego.plataforma, "\n")] = '\0';
 
-    printf("Genero del videojuego (ej. accion, puzzle, misterio,etc.): ");
-    fflush(stdin);
+    printf("Genero del videojuego (ej. accion, puzzle, misterio, etc.): ");
     fgets(nuevoJuego.genero, sizeof(nuevoJuego.genero), stdin);
     nuevoJuego.genero[strcspn(nuevoJuego.genero, "\n")] = '\0';
 
     printf("Stock disponible: ");
-    scanf("%d",&nuevoJuego.stock);
+    scanf("%d", &nuevoJuego.stock);
+    limpiarBufferVideojuego();
 
     printf("Precio US$: ");
-    scanf("%f",&nuevoJuego.precioAdquisicion);
+    scanf("%f", &nuevoJuego.precioAdquisicion);
+    limpiarBufferVideojuego();
 
     fwrite(&nuevoJuego, sizeof(Videojuego), 1, file);
     fclose(file);
 
-    printf("[!] Se a guardado con exito ");
+    printf("\n[!] Se ha guardado con exito.\n");
 }
-//D1
 
-void listarVideojuegosResumen() {
-FILE *file = fopen(ARCHIVO_VIDEOJUEGOS, "rb");
+// Modifica los datos de un videojuego activo buscandolo por ID
+void modificarVideojuego(int idJuego) {
+    FILE *file = fopen(ARCH_VIDEOJUEGOS, "r+b");
     if (file == NULL) {
+        printf("\n[!] ERROR | No hay videojuegos registrados todavia.\n");
         return;
     }
 
     Videojuego aux;
+    int encontrado = 0;
 
-printf("\n%-5s | %-30s | %-12s | %-6s\n", "ID", "TITULO", "PLATAFORMA", "STOCK");
-    printf (" ================================================================");
+    while (fread(&aux, sizeof(Videojuego), 1, file) == 1 && encontrado == 0) {
+        if (aux.idJuego == idJuego && aux.stock >= 0) {
+            encontrado = 1;
+            printf("\nEditando juego: %s\n", aux.titulo);
+
+            printf("Nuevo titulo: ");
+            fgets(aux.titulo, sizeof(aux.titulo), stdin);
+            aux.titulo[strcspn(aux.titulo, "\n")] = '\0';
+
+            printf("Nueva plataforma: ");
+            fgets(aux.plataforma, sizeof(aux.plataforma), stdin);
+            aux.plataforma[strcspn(aux.plataforma, "\n")] = '\0';
+
+            printf("Nuevo genero: ");
+            fgets(aux.genero, sizeof(aux.genero), stdin);
+            aux.genero[strcspn(aux.genero, "\n")] = '\0';
+
+            printf("Nuevo stock: ");
+            scanf("%d", &aux.stock);
+            limpiarBufferVideojuego();
+
+            printf("Nuevo precio US$: ");
+            scanf("%f", &aux.precioAdquisicion);
+            limpiarBufferVideojuego();
+
+            fseek(file, -(long)sizeof(Videojuego), SEEK_CUR);
+            fwrite(&aux, sizeof(Videojuego), 1, file);
+            printf("\n[!] Videojuego modificado con exito.\n");
+        }
+    }
+
+    if (encontrado == 0) {
+        printf("\n[!] No se encontro ningun videojuego activo con el ID %d.\n", idJuego);
+    }
+    fclose(file);
+}
+
+// Realiza la baja logica poniendo el stock en -1 sin borrar el registro fisico
+void bajaLogicaVideojuego(int idJuego) {
+    FILE *file = fopen(ARCH_VIDEOJUEGOS, "r+b");
+    if (file == NULL) {
+        printf("\n[!] ERROR | No hay videojuegos registrados todavia.\n");
+        return;
+    }
+
+    Videojuego aux;
+    int encontrado = 0;
+    char confirma;
+
+    while (fread(&aux, sizeof(Videojuego), 1, file) == 1 && encontrado == 0) {
+        if (aux.idJuego == idJuego && aux.stock >= 0) {
+            encontrado = 1;
+            printf("\nSeguro que desea dar de baja a %s? (s/n): ", aux.titulo);
+            scanf("%c", &confirma);
+            limpiarBufferVideojuego();
+
+            if (confirma == 's' || confirma == 'S') {
+                aux.stock = -1;
+                fseek(file, -(long)sizeof(Videojuego), SEEK_CUR);
+                fwrite(&aux, sizeof(Videojuego), 1, file);
+                printf("\n[!] Baja logica realizada con exito.\n");
+            } else {
+                printf("\nOperacion cancelada.\n");
+            }
+        }
+    }
+
+    if (encontrado == 0) {
+        printf("\n[!] No se encontro ningun videojuego activo con el ID %d.\n", idJuego);
+    }
+    fclose(file);
+}
+
+// D1: Lista todos los videojuegos activos en formato tabla
+void listarVideojuegosResumen() {
+    FILE *file = fopen(ARCH_VIDEOJUEGOS, "rb");
+    if (file == NULL) {
+        printf("\n[!] No hay videojuegos registrados todavia.\n");
+        return;
+    }
+
+    Videojuego aux;
+    int cantidad = 0;
+
+    printf("\n%-5s | %-30s | %-15s | %-6s\n", "ID", "TITULO", "PLATAFORMA", "STOCK");
+    printf("==================================================================\n");
 
     while (fread(&aux, sizeof(Videojuego), 1, file) == 1) {
-        printf("%-5d | %-30s | %-12s | %-6d \n", aux.idJuego, aux.titulo, aux.plataforma, aux.stock);
-
+        if (aux.stock >= 0) {
+            printf("%-5d | %-30s | %-15s | %-6d\n", aux.idJuego, aux.titulo, aux.plataforma, aux.stock);
+            cantidad++;
+        }
     }
-fclose(file);
+
+    if (cantidad == 0) {
+        printf("No hay videojuegos activos para mostrar.\n");
+    }
+    fclose(file);
 }
-//D2
 
+// D2: Filtra juegos con stock por plataforma usando arreglo dinamico (realloc)
 void listarVideojuegosPorPlataforma() {
-
-FILE *file = fopen(ARCHIVO_VIDEOJUEGOS, "rb");
+    FILE *file = fopen(ARCH_VIDEOJUEGOS, "rb");
     if (file == NULL) {
-        printf("\n [!] ERROR | NO HAY VIDEOJUEGOS REGISTRADOS TODAVIA\n");
+        printf("\n[!] ERROR | NO HAY VIDEOJUEGOS REGISTRADOS TODAVIA\n");
         return;
     }
 
     char plataformaBuscada[30];
-    printf("\n Ingrese la plataorma deseada: ");
-    fflush(stdin);
+    char platBuscadaMayus[30];
+    char platJuegoMayus[20];
+
+    printf("\nIngrese la plataforma deseada: ");
     fgets(plataformaBuscada, sizeof(plataformaBuscada), stdin);
     plataformaBuscada[strcspn(plataformaBuscada, "\n")] = '\0';
+    pasarAMayusculas(platBuscadaMayus, plataformaBuscada);
 
     Videojuego aux;
     Videojuego *Juegosfiltrados = NULL;
     int cantidad = 0;
 
     while (fread(&aux, sizeof(Videojuego), 1, file) == 1) {
-        if (strcmp(aux.plataforma, plataformaBuscada) == 0 && aux.stock > 0) {
-Videojuego *temp = realloc(Juegosfiltrados, (cantidad + 1) * sizeof(Videojuego));
-        if (temp == NULL) {
-            printf("\n [!] ERROR | Sin memoria \n");
-            free(Juegosfiltrados);
-            fclose(file);
-            return;
-        }
+        pasarAMayusculas(platJuegoMayus, aux.plataforma);
+        if (strcmp(platJuegoMayus, platBuscadaMayus) == 0 && aux.stock > 0) {
+            Videojuego *temp = realloc(Juegosfiltrados, (cantidad + 1) * sizeof(Videojuego));
+            if (temp == NULL) {
+                printf("\n[!] ERROR | Sin memoria\n");
+                free(Juegosfiltrados);
+                fclose(file);
+                return;
+            }
             Juegosfiltrados = temp;
             Juegosfiltrados[cantidad] = aux;
             cantidad++;
         }
     }
-fclose(file);
+    fclose(file);
+
     if (cantidad == 0) {
-        printf("No se encontraron juegos con stock para la plataforma [%s] \n", plataformaBuscada);
+        printf("\nNo se encontraron juegos con stock para la plataforma [%s]\n", plataformaBuscada);
         return;
     }
-    printf("\n === JUEGOS DISPONIBLES PARA %s ==== \n", plataformaBuscada);
-    for (int i = 0 ; i < cantidad ; i++) {
-        float precioDeVenta = Juegosfiltrados[i].precioAdquisicion * MARGEN_GANACIA;
-        printf("[%d] %s - Precio de venta US$: %.2f - Stock: %d \n"), Juegosfiltrados[i].idJuego, Juegosfiltrados[i].titulo,precioDeVenta,Juegosfiltrados[i].stock;
+
+    printf("\n=== JUEGOS DISPONIBLES PARA %s ===\n", plataformaBuscada);
+    for (int i = 0; i < cantidad; i++) {
+        float precioDeVenta = Juegosfiltrados[i].precioAdquisicion * MARGEN_GANANCIA;
+        printf("[%d] %s - Precio de venta US$: %.2f - Stock: %d\n",
+               Juegosfiltrados[i].idJuego, Juegosfiltrados[i].titulo, precioDeVenta, Juegosfiltrados[i].stock);
     }
     free(Juegosfiltrados);
 }
 
-int buscarVideojuegoPorId (int idJuego, Videojuego *JuegoEncontrado) {
-    FILE *file = fopen(ARCHIVO_VIDEOJUEGOS, "rb");
+// Busca un videojuego activo por ID y copia sus datos si recibe puntero
+int buscarVideojuegoPorId(int idJuego, Videojuego *JuegoEncontrado) {
+    FILE *file = fopen(ARCH_VIDEOJUEGOS, "rb");
     if (file == NULL) {
         return 0;
     }
+
     Videojuego aux;
     while (fread(&aux, sizeof(Videojuego), 1, file) == 1) {
-        if (aux.idJuego == idJuego) {
+        if (aux.idJuego == idJuego && aux.stock >= 0) {
             if (JuegoEncontrado != NULL) {
                 *JuegoEncontrado = aux;
             }
@@ -200,37 +331,40 @@ int buscarVideojuegoPorId (int idJuego, Videojuego *JuegoEncontrado) {
     fclose(file);
     return 0;
 }
-void verDetalleVideojuego (int idJuego) {
+
+// Muestra todos los campos de un videojuego incluyendo costo y precio sugerido
+void verDetalleVideojuego(int idJuego) {
     Videojuego encontrado;
-    if (buscarVideojuegoPorId (idJuego, &encontrado)) {
+    if (buscarVideojuegoPorId(idJuego, &encontrado)) {
         printf("\n=== DETALLE ADMINISTRATIVO DEL VIDEOJUEGO ===\n");
-        printf("ID Juego:           %d\n", encontrado.idJuego);
-        printf("Titulo:             %s\n", encontrado.titulo);
-        printf("Plataforma:         %s\n", encontrado.plataforma);
-        printf("Genero:             %s\n", encontrado.genero);
-        printf("Stock Actual:       %d unidades\n", encontrado.stock);
-        printf("Precio Adquisicion: $%.2f\n", encontrado.precioAdquisicion);
-        printf("Precio Venta Sugerido:  $%.2f\n", encontrado.precioAdquisicion * MARGEN_GANACIA);
+        printf("ID Juego:              %d\n", encontrado.idJuego);
+        printf("Titulo:                %s\n", encontrado.titulo);
+        printf("Plataforma:            %s\n", encontrado.plataforma);
+        printf("Genero:                %s\n", encontrado.genero);
+        printf("Stock Actual:          %d unidades\n", encontrado.stock);
+        printf("Precio Adquisicion:    $%.2f\n", encontrado.precioAdquisicion);
+        printf("Precio Venta Sugerido: $%.2f\n", encontrado.precioAdquisicion * MARGEN_GANANCIA);
     } else {
-        printf("No se encontro ningun videojuego con el ID %d.\n", idJuego);
+        printf("\nNo se encontro ningun videojuego con el ID %d.\n", idJuego);
     }
 }
 
+// Actualiza el stock de un videojuego activo verificando que no quede negativo
 int actualizarStockVideojuego(int idJuego, int cambioStock) {
-    FILE *file = fopen(ARCHIVO_VIDEOJUEGOS, "r+b");
+    FILE *file = fopen(ARCH_VIDEOJUEGOS, "r+b");
     if (file == NULL) {
         return 0;
     }
 
     Videojuego aux;
     while (fread(&aux, sizeof(Videojuego), 1, file) == 1) {
-        if (aux.idJuego == idJuego) {
+        if (aux.idJuego == idJuego && aux.stock >= 0) {
             if (aux.stock + cambioStock < 0) {
                 fclose(file);
                 return 0;
             }
-aux.stock += cambioStock;
-            fseek(file, -((long) sizeof(Videojuego)), SEEK_CUR);
+            aux.stock += cambioStock;
+            fseek(file, -((long)sizeof(Videojuego)), SEEK_CUR);
             fwrite(&aux, sizeof(Videojuego), 1, file);
             fclose(file);
             return 1;
@@ -240,7 +374,8 @@ aux.stock += cambioStock;
     return 0;
 }
 
-int obtenerUltimoIdDevolucion () {
+// Obtiene el ultimo ID de devolucion registrado
+int obtenerUltimoIdDevolucion() {
     FILE *file = fopen(ARCHIVO_DEVOLUCIONES, "rb");
     if (file == NULL) {
         return 0;
@@ -260,13 +395,15 @@ int obtenerUltimoIdDevolucion () {
     return ultimoId;
 }
 
-int transcionYaDevuelta (int idTransaccion) {
+// Verifica si una transaccion ya fue devuelta anteriormente
+int transaccionYaDevuelta(int idTransaccion) {
     FILE *file = fopen(ARCHIVO_DEVOLUCIONES, "rb");
     if (file == NULL) {
         return 0;
     }
+
     Devolucion aux;
-    while (fread(&aux,sizeof(Devolucion), 1, file) == 1) {
+    while (fread(&aux, sizeof(Devolucion), 1, file) == 1) {
         if (aux.idTransaccionAnulada == idTransaccion) {
             fclose(file);
             return 1;
@@ -276,65 +413,71 @@ int transcionYaDevuelta (int idTransaccion) {
     return 0;
 }
 
-void registrarDevoluciones () {
+// Registra la devolucion de una venta y reintegra las unidades al stock
+void registrarDevolucion() {
     int idTransaccion = 0;
-    printf("\n === REGISTRO DE DEVOLUCIONES === \n");
-    printf("Ingrese el id de la transaccion a anular: ");
+    printf("\n=== REGISTRO DE DEVOLUCIONES ===\n");
+    printf("Ingrese el ID de la transaccion a anular: ");
     scanf("%d", &idTransaccion);
+    limpiarBufferVideojuego();
 
-    if (transcionYaDevuelta(idTransaccion)) {
-        printf("[!] ERROR | LA TRANSACCION #%d, YA FUE DEVUELTA ANTERIORMENTE \n",idTransaccion);
+    if (transaccionYaDevuelta(idTransaccion)) {
+        printf("\n[!] ERROR | LA TRANSACCION #%d YA FUE DEVUELTA ANTERIORMENTE\n", idTransaccion);
         return;
     }
 
     int idJuego = 0;
     int cantidad = 0;
-    printf("Ingrese ID del juego asociado:");
+    printf("Ingrese ID del juego asociado: ");
     scanf("%d", &idJuego);
+    limpiarBufferVideojuego();
+
     printf("Ingrese cantidad de unidades a reintegrar: ");
     scanf("%d", &cantidad);
+    limpiarBufferVideojuego();
 
     Devolucion nueva;
-
     nueva.idDevolucion = obtenerUltimoIdDevolucion() + 1;
     nueva.idTransaccionAnulada = idTransaccion;
     nueva.idJuego = idJuego;
     nueva.cantidadDevuelta = cantidad;
 
-    printf("FECHA DE DEVOLUCION [DIA | MES | AÑO ]: ");
+    printf("FECHA DE DEVOLUCION [DIA MES ANIO]: ");
     scanf("%d %d %d", &nueva.fechaDevolucion.dia, &nueva.fechaDevolucion.mes, &nueva.fechaDevolucion.anio);
+    limpiarBufferVideojuego();
 
     printf("Motivo: ");
-    fflush(stdin);
     fgets(nueva.motivo, sizeof(nueva.motivo), stdin);
     nueva.motivo[strcspn(nueva.motivo, "\n")] = '\0';
 
-    if (actualizarStockVideojuegos(nueva.idJuego, nueva.cantidadDevuelta)) {
+    if (actualizarStockVideojuego(nueva.idJuego, nueva.cantidadDevuelta)) {
         FILE *file = fopen(ARCHIVO_DEVOLUCIONES, "ab");
         if (file != NULL) {
             fwrite(&nueva, sizeof(Devolucion), 1, file);
             fclose(file);
-            printf("Devolucion #%d Registrada. \n ha sido devuelto al stock (%d unidades)\n");
-            nueva.idDevolucion, nueva.cantidadDevuelta;
+            printf("\nDevolucion #%d registrada. Se han devuelto al stock (%d unidades).\n",
+                   nueva.idDevolucion, nueva.cantidadDevuelta);
         }
-    }else {
-        printf("[!] ERROR, NO SE ENCONTRO EL VIDEOJUEGO ID %d PARA ACTUALIZAR EL STOCK \n",nueva.idJuego);
+    } else {
+        printf("\n[!] ERROR | NO SE ENCONTRO EL VIDEOJUEGO ID %d PARA ACTUALIZAR EL STOCK\n", nueva.idJuego);
     }
 }
 
-void listarDevoluciones () {
+// Muestra el historial completo de devoluciones registradas
+void listarDevoluciones() {
     FILE *file = fopen(ARCHIVO_DEVOLUCIONES, "rb");
     if (file == NULL) {
-        printf("[!] No hay devoluciones registradas \n");
+        printf("\n[!] No hay devoluciones registradas.\n");
         return;
     }
+
     Devolucion aux;
-    printf("\n === HISTORIAL DE DEVOLUCIONES DE VIDEOJUEGOS ===");
+    printf("\n=== HISTORIAL DE DEVOLUCIONES DE VIDEOJUEGOS ===\n");
     while (fread(&aux, sizeof(Devolucion), 1, file) == 1) {
-        printf("DEVOLUCION #%d | Venta anulada #%d | ID de juego #%d | Cantidad %d | Fecha %d/%d/%d | Motivo %s \n",
-            aux.idDevolucion,aux.idTransaccionAnulada, aux.idJuego, aux.cantidadDevuelta,
-            aux.fechaDevolucion.dia, aux.fechaDevolucion.mes, aux.fechaDevolucion.anio,
-            aux.motivo);
+        printf("DEVOLUCION #%d | Venta anulada #%d | ID de juego #%d | Cantidad %d | Fecha %d/%d/%d | Motivo: %s\n",
+               aux.idDevolucion, aux.idTransaccionAnulada, aux.idJuego, aux.cantidadDevuelta,
+               aux.fechaDevolucion.dia, aux.fechaDevolucion.mes, aux.fechaDevolucion.anio,
+               aux.motivo);
     }
     fclose(file);
 }
