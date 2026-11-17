@@ -5,6 +5,12 @@
 #include "../include/videojuego.h"
 #include "../include/persona.h"
 
+static void limpiarBufferTransaccion(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
+}
+
 int esFechaValida(Fecha f) {
     if (f.anio < 2000 || f.anio > 2100) return 0;
     if (f.mes < 1 || f.mes > 12) return 0;
@@ -30,8 +36,17 @@ void menuTransacciones() {
         printf("3. Registrar venta.\n");
         printf("0. Volver al menu principal.\n");
         printf("Seleccione una opcion: ");
-        scanf("%d", &opcion);
-        while (getchar() != '\n');
+        opcion = -1;
+        {
+            int leido = scanf("%d", &opcion);
+            limpiarBufferTransaccion();
+            if (leido != 1) {
+                opcion = -1;
+            }
+            if (leido == EOF) {
+                break;
+            }
+        }
 
         switch (opcion) {
             case 0:
@@ -43,7 +58,7 @@ void menuTransacciones() {
             case 2:
                 printf("Ingrese el ID de la transaccion a buscar: ");
                 scanf("%d", &idBuscado);
-                while (getchar() != '\n');
+                limpiarBufferTransaccion();
                 verTransaccionDetalle(ARCH_TRANSACCIONES, idBuscado);
                 break;
             case 3:
@@ -116,14 +131,19 @@ long generarIdTransaccion(char archivoTransaccion[]) {
     if (buffer == NULL) {
         return 0;
     }
-    fseek(buffer, 0, SEEK_END);
-    long bytes = ftell(buffer);
-    fclose(buffer);
 
-    if (bytes <= 0) {
-        return 0;
+    Transaccion aux;
+    long ultimoId = 0;
+
+    fseek(buffer, 0, SEEK_END);
+    if (ftell(buffer) > 0) {
+        fseek(buffer, -(long)sizeof(Transaccion), SEEK_END);
+        if (fread(&aux, sizeof(Transaccion), 1, buffer) == 1) {
+            ultimoId = aux.idTransaccion;
+        }
     }
-    return bytes / (long)sizeof(Transaccion);
+    fclose(buffer);
+    return ultimoId;
 }
 
 //* PARA REGISTRAR UNA TRANSACCION EN EL ARCHIVO DE TRANSACCIONES *//
@@ -186,7 +206,7 @@ ItemCarrito* cargarItemsCarrito(int *cantItems) {
 
         printf("\nIngrese el ID del videojuego: ");
         scanf("%d", &idBuscado);
-        while (getchar() != '\n');
+        limpiarBufferTransaccion();
 
         int idx = buscarIndiceEnCarrito(carrito, *cantItems, idBuscado);
         int yaCargados = (idx != -1) ? carrito[idx].cantidad : 0;
@@ -199,7 +219,7 @@ ItemCarrito* cargarItemsCarrito(int *cantItems) {
                    comprado.titulo, stockDisp, comprado.precioAdquisicion * MARGEN_GANANCIA);
             printf("Cuantas unidades desea llevar?: ");
             scanf("%d", &cantDeseada);
-            while (getchar() != '\n');
+            limpiarBufferTransaccion();
 
             if (cantDeseada <= 0 || cantDeseada > stockDisp) {
                 printf("Cantidad invalida.\n");
@@ -216,7 +236,7 @@ ItemCarrito* cargarItemsCarrito(int *cantItems) {
 
         printf("\nDesea agregar otro producto? (s/n): ");
         scanf(" %c", &seguir);
-        while (getchar() != '\n');
+        limpiarBufferTransaccion();
     }
 
     return carrito;
@@ -258,7 +278,7 @@ int procesarCarritoCompras(char archivoTransacciones[]) {
     do {
         printf("Fecha (Dia Mes Anio): ");
         scanf("%d %d %d", &base.fecha.dia, &base.fecha.mes, &base.fecha.anio);
-        while (getchar() != '\n');
+        limpiarBufferTransaccion();
         if (!esFechaValida(base.fecha)) {
             printf("Fecha invalida (verifique dias del mes/anio). Intente nuevamente.\n");
         }

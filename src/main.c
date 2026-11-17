@@ -7,8 +7,15 @@
 #include "../include/transaccion.h"
 #include "../include/reportes.h"
 
+static void limpiarBufferMain(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
+}
+
 int main() {
     int opcion;
+    int leido;
 
     do {
         system("cls || clear");
@@ -22,8 +29,15 @@ int main() {
         printf("0. Salir\n");
         printf("------------------------------------\n");
         printf("Seleccione una opcion: ");
-        scanf("%d", &opcion);
-        while (getchar() != '\n');
+        opcion = -1;
+        leido = scanf("%d", &opcion);
+        limpiarBufferMain();
+        if (leido != 1) {
+            opcion = -1;
+        }
+        if (leido == EOF) {
+            break;
+        }
 
         switch (opcion) {
             case 1:

@@ -2,9 +2,31 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/persona.h"
+#include "../include/videojuego.h"
 
 void limpiarBufferPersona() {
-    while (getchar() != '\n');
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
+}
+
+/* Lee un campo y descarta el resto de la linea si no entra en el buffer. */
+static void leerLineaPersona(char destino[], int tam) {
+    int c;
+
+    if (tam <= 0) {
+        return;
+    }
+    if (fgets(destino, tam, stdin) == NULL) {
+        destino[0] = '\0';
+        return;
+    }
+    if (strchr(destino, '\n') == NULL) {
+        while ((c = getchar()) != '\n' && c != EOF) {
+        }
+    }
+    destino[strcspn(destino, "\n")] = '\0';
+    destino[strcspn(destino, "\r")] = '\0';
 }
 
 void menuPersonas() {
@@ -33,8 +55,17 @@ void menuPersonas() {
         printf("0. Volver al Menu Principal\n");
         printf("------------------------------------\n");
         printf("Ingrese una opcion: ");
-        scanf("%d", &opcion);
-        limpiarBufferPersona();
+        opcion = -1;
+        {
+            int leido = scanf("%d", &opcion);
+            limpiarBufferPersona();
+            if (leido != 1) {
+                opcion = -1;
+            }
+            if (leido == EOF) {
+                break;
+            }
+        }
 
         switch (opcion) {
             case 1:
@@ -42,14 +73,12 @@ void menuPersonas() {
                 break;
             case 2:
                 printf("\nIngrese el DNI de la persona a modificar: ");
-                fgets(dniBuscado, sizeof(dniBuscado), stdin);
-                dniBuscado[strcspn(dniBuscado, "\n")] = '\0';
+                leerLineaPersona(dniBuscado, sizeof(dniBuscado));
                 modificarPersonaPorDni(dniBuscado);
                 break;
             case 3:
                 printf("\nIngrese el DNI de la persona a dar de baja: ");
-                fgets(dniBuscado, sizeof(dniBuscado), stdin);
-                dniBuscado[strcspn(dniBuscado, "\n")] = '\0';
+                leerLineaPersona(dniBuscado, sizeof(dniBuscado));
                 bajaLogicaPersona(dniBuscado);
                 break;
             case 4:
@@ -57,8 +86,7 @@ void menuPersonas() {
                 break;
             case 5:
                 printf("\nIngrese el DNI a buscar: ");
-                fgets(dniBuscado, sizeof(dniBuscado), stdin);
-                dniBuscado[strcspn(dniBuscado, "\n")] = '\0';
+                leerLineaPersona(dniBuscado, sizeof(dniBuscado));
                 mostrarPersonaDetallada(dniBuscado);
                 break;
             case 6:
@@ -77,8 +105,7 @@ void menuPersonas() {
                 break;
             case 9:
                 printf("\nIngrese el DNI del cliente: ");
-                fgets(dniBuscado, 15, stdin);
-                dniBuscado[strcspn(dniBuscado, "\n")] = '\0';
+                leerLineaPersona(dniBuscado, sizeof(dniBuscado));
                 mostrarEstadoVipCliente(dniBuscado);
                 break;
             case 0:
@@ -138,8 +165,7 @@ void altaPersona() {
 
     printf("\n--- ALTA DE NUEVA PERSONA ---\n");
     printf("Ingrese DNI: ");
-    fgets(nueva.dni, sizeof(nueva.dni), stdin);
-    nueva.dni[strcspn(nueva.dni, "\n")] = '\0';
+    leerLineaPersona(nueva.dni, sizeof(nueva.dni));
 
     if (existePersonaPorDni(nueva.dni) == 1) {
         printf("\nError: Ya existe una persona con ese DNI en el sistema.\n");
@@ -147,20 +173,16 @@ void altaPersona() {
     }
 
     printf("Ingrese Nombre y Apellido: ");
-    fgets(nueva.nombre, sizeof(nueva.nombre), stdin);
-    nueva.nombre[strcspn(nueva.nombre, "\n")] = '\0';
+    leerLineaPersona(nueva.nombre, sizeof(nueva.nombre));
 
     printf("Ingrese Telefono: ");
-    fgets(nueva.telefono, sizeof(nueva.telefono), stdin);
-    nueva.telefono[strcspn(nueva.telefono, "\n")] = '\0';
+    leerLineaPersona(nueva.telefono, sizeof(nueva.telefono));
 
     printf("Ingrese Direccion: ");
-    fgets(nueva.direccion, sizeof(nueva.direccion), stdin);
-    nueva.direccion[strcspn(nueva.direccion, "\n")] = '\0';
+    leerLineaPersona(nueva.direccion, sizeof(nueva.direccion));
 
     printf("Ingrese Rol (cliente / empleado): ");
-    fgets(nueva.rol, sizeof(nueva.rol), stdin);
-    nueva.rol[strcspn(nueva.rol, "\n")] = '\0';
+    leerLineaPersona(nueva.rol, sizeof(nueva.rol));
 
     arch = fopen(ARCH_PERSONAS, "ab");
     if (arch != NULL) {
@@ -189,20 +211,16 @@ void modificarPersonaPorDni(char dni[]) {
 
             printf("\nPersona encontrada: %s\n", aux.nombre);
             printf("Ingrese nuevo Nombre y Apellido: ");
-            fgets(aux.nombre, sizeof(aux.nombre), stdin);
-            aux.nombre[strcspn(aux.nombre, "\n")] = '\0';
+            leerLineaPersona(aux.nombre, sizeof(aux.nombre));
 
             printf("Ingrese nuevo Telefono: ");
-            fgets(aux.telefono, sizeof(aux.telefono), stdin);
-            aux.telefono[strcspn(aux.telefono, "\n")] = '\0';
+            leerLineaPersona(aux.telefono, sizeof(aux.telefono));
 
             printf("Ingrese nueva Direccion: ");
-            fgets(aux.direccion, sizeof(aux.direccion), stdin);
-            aux.direccion[strcspn(aux.direccion, "\n")] = '\0';
+            leerLineaPersona(aux.direccion, sizeof(aux.direccion));
 
             printf("Ingrese nuevo Rol (cliente / empleado): ");
-            fgets(aux.rol, sizeof(aux.rol), stdin);
-            aux.rol[strcspn(aux.rol, "\n")] = '\0';
+            leerLineaPersona(aux.rol, sizeof(aux.rol));
 
             // Retrocede el puntero del archivo un registro para actualizar la parte necesaria
 
@@ -373,8 +391,7 @@ void altaUsuario() {
 
     printf("\n--- ALTA DE USUARIO DEL SISTEMA ---\n");
     printf("Ingrese DNI del empleado ya registrado: ");
-    fgets(dniEmp, 15, stdin);
-    dniEmp[strcspn(dniEmp, "\n")] = '\0';
+    leerLineaPersona(dniEmp, sizeof(dniEmp));
 
     if (buscarPersonaPorDni(dniEmp, &emp) == 0) {
         printf("\nError: No existe una persona activa con ese DNI. Registrela primero.\n");
@@ -389,8 +406,7 @@ void altaUsuario() {
     nuevo.persona = emp;
 
     printf("Nombre de usuario: ");
-    fgets(nuevo.usuario, 20, stdin);
-    nuevo.usuario[strcspn(nuevo.usuario, "\n")] = '\0';
+    leerLineaPersona(nuevo.usuario, sizeof(nuevo.usuario));
 
     if (existeNombreUsuario(nuevo.usuario) == 1) {
         printf("\nError: Ese nombre de usuario ya existe.\n");
@@ -398,8 +414,7 @@ void altaUsuario() {
     }
 
     printf("Contrasenia: ");
-    fgets(nuevo.contrasenia, 20, stdin);
-    nuevo.contrasenia[strcspn(nuevo.contrasenia, "\n")] = '\0';
+    leerLineaPersona(nuevo.contrasenia, sizeof(nuevo.contrasenia));
 
     arch = fopen(ARCH_USUARIOS, "ab");
     if (arch != NULL) {
@@ -446,12 +461,10 @@ int iniciarSesion(Usuario *usuarioLogueado) {
 
     printf("\n--- INICIO DE SESION ---\n");
     printf("Usuario: ");
-    fgets(userIngresado, 20, stdin);
-    userIngresado[strcspn(userIngresado, "\n")] = '\0';
+    leerLineaPersona(userIngresado, sizeof(userIngresado));
 
     printf("Contrasenia: ");
-    fgets(passIngresada, 20, stdin);
-    passIngresada[strcspn(passIngresada, "\n")] = '\0';
+    leerLineaPersona(passIngresada, sizeof(passIngresada));
 
     while (fread(&aux, sizeof(Usuario), 1, arch) == 1 && acceso == 0) {
         if (strcmp(aux.usuario, userIngresado) == 0 &&
@@ -477,7 +490,7 @@ float calcularTotalComprasRecursivo(FILE *arch, char dniCliente[]) {
     }
 
     // Si la transaccion pertenece al cliente buscado, calcula el monto de esa venta
-    if (strcmp(t.dniCliente, dniCliente) == 0) {
+    if (strcmp(t.dniCliente, dniCliente) == 0 && transaccionYaDevuelta(t.idTransaccion) == 0) {
         subtotal = t.precioUnitarioVenta * t.cantidadVendida;
     }
 

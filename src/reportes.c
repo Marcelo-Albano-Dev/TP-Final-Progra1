@@ -6,7 +6,9 @@
 
 
 void limpiarBufferReportes() {
-    while (getchar() != '\n');
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
 }
 
 // Menu de Reportes
@@ -26,8 +28,17 @@ void menuReportes() {
         printf("0. Salir del Modulo\n");
         printf("------------------------------------\n");
         printf("Ingrese una opcion: ");
-        scanf("%d", &opcion);
-        limpiarBufferReportes();
+        opcion = -1;
+        {
+            int leido = scanf("%d", &opcion);
+            limpiarBufferReportes();
+            if (leido != 1) {
+                opcion = -1;
+            }
+            if (leido == EOF) {
+                break;
+            }
+        }
 
         switch (opcion) {
             case 1:
@@ -110,6 +121,9 @@ void mostrarReporteMensual() {
     printf("\n=== RECAUDACION MENSUAL (%02d/%d) ===\n", mes, anio);
 
     while (fread(&aux, sizeof(Transaccion), 1, buffer) == 1) {
+        if (transaccionYaDevuelta(aux.idTransaccion)) {
+            continue;
+        }
         if (aux.fecha.mes == mes && aux.fecha.anio == anio) {
             float venta = aux.precioUnitarioVenta * aux.cantidadVendida;
 
@@ -143,6 +157,9 @@ void ventaMayorGanancia() {
     }
 
     while (fread(&aux, sizeof(Transaccion), 1, buffer) == 1) {
+        if (transaccionYaDevuelta(aux.idTransaccion)) {
+            continue;
+        }
         if (!encontrado || aux.gananciaTotal > mayor.gananciaTotal) {
             mayor = aux;
             encontrado = 1;
@@ -281,7 +298,8 @@ float analisisGanancias(FILE *buffer, Fecha desde, Fecha hasta) {
     }
 
     float gananciaActual = 0.0f;
-    if (compararFechas(aux.fecha, desde) >= 0 && compararFechas(aux.fecha, hasta) <= 0) {
+    if (transaccionYaDevuelta(aux.idTransaccion) == 0 &&
+        compararFechas(aux.fecha, desde) >= 0 && compararFechas(aux.fecha, hasta) <= 0) {
         gananciaActual = aux.gananciaTotal;
     }
 

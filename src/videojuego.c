@@ -2,10 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include "../include/videojuego.h"
+#include "../include/reportes.h"
 
 void limpiarBufferVideojuego() {
-    while (getchar() != '\n');
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
 }
 
 void pasarAMayusculas(char destino[], char origen[]) {
@@ -49,8 +53,17 @@ void menuVideojuegos() {
         printf("8. Ver historial de devoluciones\n");
         printf("0. VOLVER AL MENU PRINCIPAL\n");
         printf("[#] SELECCIONE UNA OPCION [#]: ");
-        scanf("%d", &opc);
-        limpiarBufferVideojuego();
+        opc = -1;
+        {
+            int leido = scanf("%d", &opc);
+            limpiarBufferVideojuego();
+            if (leido != 1) {
+                opc = -1;
+            }
+            if (leido == EOF) {
+                break;
+            }
+        }
 
         switch (opc) {
             case 1:
@@ -156,6 +169,18 @@ void cargarVideojuego() {
     scanf("%f", &nuevoJuego.precioAdquisicion);
     limpiarBufferVideojuego();
 
+    if (strlen(nuevoJuego.titulo) == 0) {
+        printf("\n[!] ERROR | El titulo del videojuego no puede estar vacio.\n");
+        fclose(file);
+        return;
+    }
+
+    if (nuevoJuego.stock < 0) {
+        printf("\n[!] ERROR | El stock inicial no puede ser negativo.\n");
+        fclose(file);
+        return;
+    }
+
     fwrite(&nuevoJuego, sizeof(Videojuego), 1, file);
     fclose(file);
 
@@ -178,6 +203,7 @@ void modificarVideojuego(int idJuego) {
         if (aux.idJuego == idJuego && aux.stock >= 0) {
             encontrado = 1;
             printf("\nEditando juego: %s\n", aux.titulo);
+            float precioViejo = aux.precioAdquisicion;
 
             printf("Nuevo titulo: ");
             fgets(aux.titulo, sizeof(aux.titulo), stdin);
@@ -202,6 +228,40 @@ void modificarVideojuego(int idJuego) {
             fseek(file, pos, SEEK_SET);
             fwrite(&aux, sizeof(Videojuego), 1, file);
             fflush(file);
+
+            if (aux.precioAdquisicion != precioViejo) {
+                ReportesPrecio reporte;
+                FILE *archPrecio;
+                int idReporte = 0;
+                ReportesPrecio auxReporte;
+                time_t ahora = time(NULL);
+                struct tm *fechaLocal = localtime(&ahora);
+
+                memset(&reporte, 0, sizeof(reporte));
+                archPrecio = fopen(ARCH_REPORTES_PRECIO, "rb");
+                if (archPrecio != NULL) {
+                    while (fread(&auxReporte, sizeof(auxReporte), 1, archPrecio) == 1) {
+                        if (auxReporte.idReportes > idReporte) {
+                            idReporte = auxReporte.idReportes;
+                        }
+                    }
+                    fclose(archPrecio);
+                }
+                reporte.idReportes = idReporte + 1;
+                reporte.idJuego = aux.idJuego;
+                reporte.precioAdquisicionViejo = precioViejo;
+                reporte.precioAdquisicionNuevo = aux.precioAdquisicion;
+                if (fechaLocal != NULL) {
+                    reporte.fechaModificacion.dia = fechaLocal->tm_mday;
+                    reporte.fechaModificacion.mes = fechaLocal->tm_mon + 1;
+                    reporte.fechaModificacion.anio = fechaLocal->tm_year + 1900;
+                }
+                archPrecio = fopen(ARCH_REPORTES_PRECIO, "ab");
+                if (archPrecio != NULL) {
+                    fwrite(&reporte, sizeof(reporte), 1, archPrecio);
+                    fclose(archPrecio);
+                }
+            }
             printf("\n[!] Videojuego modificado con exito.\n");
         }
         pos = ftell(file);
