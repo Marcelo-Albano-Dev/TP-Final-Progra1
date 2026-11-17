@@ -35,14 +35,12 @@ TP-Final-Progra1/
 │   ├── videojuego.h
 │   ├── transaccion.h
 │   ├── reportes.h
-│   └── auditoria.h
 ├── src/                   # Código fuente (.c)
 │   ├── main.c
 │   ├── persona.c
 │   ├── videojuego.c
 │   ├── transaccion.c
 │   ├── reportes.c
-│   └── auditoria.c
 ├── data/                  # Archivos binarios (.dat) generados en ejecución
 ├── TP-Final-Progra1.cbp   # Archivo de proyecto para Code::Blocks
 └── README.md
