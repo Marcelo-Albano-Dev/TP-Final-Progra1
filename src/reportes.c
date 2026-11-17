@@ -112,15 +112,14 @@ void mostrarReporteMensual() {
     while (fread(&aux, sizeof(Transaccion), 1, buffer) == 1) {
         if (aux.fecha.mes == mes && aux.fecha.anio == anio) {
             float venta = aux.precioUnitarioVenta * aux.cantidadVendida;
-            float ganancia = (aux.precioUnitarioVenta - aux.gananciaTotal) * aux.cantidadVendida;
 
             recaudacionTotal += venta;
-            gananciaTotal += ganancia;
+            gananciaTotal += aux.gananciaTotal;
             cambio = consultarCambioPrecio(aux.idJuegoVendido, mes, anio);
 
             printf("Transaccion #%d | Fecha: %02d/%02d/%d | Juego ID: %d | Ganancia: $%.2f | Cambio precio: %s\n",
                    aux.idTransaccion, aux.fecha.dia, aux.fecha.mes, aux.fecha.anio,
-                   aux.idJuegoVendido, ganancia, cambio ? "SI" : "NO");
+                   aux.idJuegoVendido, aux.gananciaTotal, cambio ? "SI" : "NO");
         }
     }
 
@@ -134,10 +133,8 @@ void mostrarReporteMensual() {
 void ventaMayorGanancia() {
     FILE *buffer = fopen(ARCH_TRANSACCIONES, "rb");
     Transaccion aux;
-    Videojuego auxV;
     Transaccion mayor;
     Videojuego juego;
-    float mayorGanancia = 0.0f;
     int encontrado = 0;
 
     if (buffer == NULL) {
@@ -146,10 +143,8 @@ void ventaMayorGanancia() {
     }
 
     while (fread(&aux, sizeof(Transaccion), 1, buffer) == 1) {
-        float gananciaActual = (aux.precioUnitarioVenta - auxV.precioAdquisicion) * aux.cantidadVendida;
-        if (!encontrado || gananciaActual > mayorGanancia) {
+        if (!encontrado || aux.gananciaTotal > mayor.gananciaTotal) {
             mayor = aux;
-            mayorGanancia = gananciaActual;
             encontrado = 1;
         }
     }
@@ -162,7 +157,7 @@ void ventaMayorGanancia() {
 
     printf("\n=== VENTA DE MAYOR GANANCIA ===\n");
     printf("ID Transaccion: #%d\n", mayor.idTransaccion);
-    printf("Ganancia Neta:  $%.2f\n", mayorGanancia);
+    printf("Ganancia Neta:  $%.2f\n", mayor.gananciaTotal);
     printf("Fecha:          %02d/%02d/%d\n", mayor.fecha.dia, mayor.fecha.mes, mayor.fecha.anio);
 
     if (buscarVideojuegoPorId(mayor.idJuegoVendido, &juego)) {
@@ -287,7 +282,7 @@ float analisisGanancias(FILE *buffer, Fecha desde, Fecha hasta) {
 
     float gananciaActual = 0.0f;
     if (compararFechas(aux.fecha, desde) >= 0 && compararFechas(aux.fecha, hasta) <= 0) {
-        gananciaActual = (aux.precioUnitarioVenta - aux.gananciaTotal) * aux.cantidadVendida;
+        gananciaActual = aux.gananciaTotal;
     }
 
     return gananciaActual + analisisGanancias(buffer, desde, hasta);

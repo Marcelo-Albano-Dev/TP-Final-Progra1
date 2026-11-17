@@ -5,6 +5,20 @@
 #include "../include/videojuego.h"
 #include "../include/persona.h"
 
+int esFechaValida(Fecha f) {
+    if (f.anio < 2000 || f.anio > 2100) return 0;
+    if (f.mes < 1 || f.mes > 12) return 0;
+    if (f.dia < 1) return 0;
+
+    int diasMes[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if ((f.anio % 4 == 0 && f.anio % 100 != 0) || (f.anio % 400 == 0)) {
+        diasMes[2] = 29;
+    }
+
+    if (f.dia > diasMes[f.mes]) return 0;
+    return 1;
+}
+
 void menuTransacciones() {
     int idBuscado;
     int opcion;
@@ -21,7 +35,7 @@ void menuTransacciones() {
 
         switch (opcion) {
             case 0:
-                printf("Volviendo al menu principal...\n");
+                printf("Volver al menu\n");
                 break;
             case 1:
                 listadoTransacciones(ARCH_TRANSACCIONES);
@@ -118,15 +132,16 @@ int registrarTransaccion(char archivoTransacciones[], Transaccion trans, int idJ
     if (buffer == NULL) {
         return -1; // Fallo al abrir archivo
     }
-    if (actualizarStockVideojuego(idJuego, -cantidadVendida) == 0) {
-        return -3; // Fallo al descontar stock
-    }
-    
+
     if (fwrite(&trans, sizeof(Transaccion), 1, buffer) != 1) {
         fclose(buffer);
         return -1;
     }
     fclose(buffer);
+
+    if (actualizarStockVideojuego(idJuego, -cantidadVendida) == 0) {
+        return -3; // Fallo al descontar stock
+    }
 
     return 1; // Registro exitoso
 }
@@ -238,15 +253,14 @@ int procesarCarritoCompras(char archivoTransacciones[]) {
         return 0;
     }
 
-    printf("Fecha (Dia Mes Anio): ");
-    scanf("%d %d %d", &base.fecha.dia, &base.fecha.mes, &base.fecha.anio);
-    while (getchar() != '\n');
-    while (base.fecha.dia < 1 || base.fecha.dia > 31 || base.fecha.mes < 1 || base.fecha.mes > 12 || base.fecha.anio < 2000 || base.fecha.anio > 2100) 
-    {
-       printf("Fecha invalida. Reingrese (Dia Mes Anio): ");
-       scanf("%d %d %d", &base.fecha.dia, &base.fecha.mes, &base.fecha.anio);
-       while (getchar() != '\n');
-    }
+    do {
+        printf("Fecha (Dia Mes Anio): ");
+        scanf("%d %d %d", &base.fecha.dia, &base.fecha.mes, &base.fecha.anio);
+        while (getchar() != '\n');
+        if (!esFechaValida(base.fecha)) {
+            printf("Fecha invalida (verifique dias del mes/anio). Intente nuevamente.\n");
+        }
+    } while (!esFechaValida(base.fecha));
 
     // Consulta descuento VIP acumulado del cliente
     float descVip = calcularDescuentoVipCliente(base.dniCliente);

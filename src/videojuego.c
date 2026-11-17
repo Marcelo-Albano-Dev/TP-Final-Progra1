@@ -17,6 +17,20 @@ void pasarAMayusculas(char destino[], char origen[]) {
     destino[i] = '\0';
 }
 
+int validarFechaDevolucion(Fecha f) {
+    if (f.anio < 2000 || f.anio > 2100) return 0;
+    if (f.mes < 1 || f.mes > 12) return 0;
+    if (f.dia < 1) return 0;
+
+    int diasMes[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if ((f.anio % 4 == 0 && f.anio % 100 != 0) || (f.anio % 400 == 0)) {
+        diasMes[2] = 29;
+    }
+
+    if (f.dia > diasMes[f.mes]) return 0;
+    return 1;
+}
+
 // MENU DE VIDEOJUEGOS
 void menuVideojuegos() {
     int opc = 0;
@@ -159,6 +173,7 @@ void modificarVideojuego(int idJuego) {
     Videojuego aux;
     int encontrado = 0;
 
+    long pos = ftell(file);
     while (fread(&aux, sizeof(Videojuego), 1, file) == 1 && encontrado == 0) {
         if (aux.idJuego == idJuego && aux.stock >= 0) {
             encontrado = 1;
@@ -184,10 +199,12 @@ void modificarVideojuego(int idJuego) {
             scanf("%f", &aux.precioAdquisicion);
             limpiarBufferVideojuego();
 
-            fseek(file, -(long)sizeof(Videojuego), SEEK_CUR);
+            fseek(file, pos, SEEK_SET);
             fwrite(&aux, sizeof(Videojuego), 1, file);
+            fflush(file);
             printf("\n[!] Videojuego modificado con exito.\n");
         }
+        pos = ftell(file);
     }
 
     if (encontrado == 0) {
@@ -208,6 +225,7 @@ void bajaLogicaVideojuego(int idJuego) {
     int encontrado = 0;
     char confirma;
 
+    long pos = ftell(file);
     while (fread(&aux, sizeof(Videojuego), 1, file) == 1 && encontrado == 0) {
         if (aux.idJuego == idJuego && aux.stock >= 0) {
             encontrado = 1;
@@ -217,13 +235,15 @@ void bajaLogicaVideojuego(int idJuego) {
 
             if (confirma == 's' || confirma == 'S') {
                 aux.stock = -1;
-                fseek(file, -(long)sizeof(Videojuego), SEEK_CUR);
+                fseek(file, pos, SEEK_SET);
                 fwrite(&aux, sizeof(Videojuego), 1, file);
+                fflush(file);
                 printf("\n[!] Baja logica realizada con exito.\n");
             } else {
                 printf("\nOperacion cancelada.\n");
             }
         }
+        pos = ftell(file);
     }
 
     if (encontrado == 0) {
@@ -357,6 +377,7 @@ int actualizarStockVideojuego(int idJuego, int cambioStock) {
     }
 
     Videojuego aux;
+    long pos = ftell(file);
     while (fread(&aux, sizeof(Videojuego), 1, file) == 1) {
         if (aux.idJuego == idJuego && aux.stock >= 0) {
             if (aux.stock + cambioStock < 0) {
@@ -364,11 +385,13 @@ int actualizarStockVideojuego(int idJuego, int cambioStock) {
                 return 0;
             }
             aux.stock += cambioStock;
-            fseek(file, -((long)sizeof(Videojuego)), SEEK_CUR);
+            fseek(file, pos, SEEK_SET);
             fwrite(&aux, sizeof(Videojuego), 1, file);
+            fflush(file);
             fclose(file);
             return 1;
         }
+        pos = ftell(file);
     }
     fclose(file);
     return 0;
@@ -442,9 +465,14 @@ void registrarDevolucion() {
     nueva.idJuego = idJuego;
     nueva.cantidadDevuelta = cantidad;
 
-    printf("FECHA DE DEVOLUCION [DIA MES ANIO]: ");
-    scanf("%d %d %d", &nueva.fechaDevolucion.dia, &nueva.fechaDevolucion.mes, &nueva.fechaDevolucion.anio);
-    limpiarBufferVideojuego();
+    do {
+        printf("FECHA DE DEVOLUCION [DIA MES ANIO]: ");
+        scanf("%d %d %d", &nueva.fechaDevolucion.dia, &nueva.fechaDevolucion.mes, &nueva.fechaDevolucion.anio);
+        limpiarBufferVideojuego();
+        if (!validarFechaDevolucion(nueva.fechaDevolucion)) {
+            printf("[!] Fecha invalida. Verifique dia, mes y anio.\n");
+        }
+    } while (!validarFechaDevolucion(nueva.fechaDevolucion));
 
     printf("Motivo: ");
     fgets(nueva.motivo, sizeof(nueva.motivo), stdin);
