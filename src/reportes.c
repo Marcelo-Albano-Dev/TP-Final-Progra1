@@ -9,12 +9,12 @@
 
 ///Structs----------------------------------------------------
 typedef struct {
-    int idAuditoria;
+    int idReportes;
     int idJuego;
     float precioAdquisicionViejo;
     float precioAdquisicionNuevo;
     Fecha fechaModificacion;
-} AuditoriaPrecio;
+} ReportesPrecio;
 
 ///Prototipado------------------------------------------------
 //Reporte de recaudacion mensual
@@ -31,8 +31,8 @@ int particionStock(Videojuego vector[],int inicio,int fin);
 void quickSortStock(Videojuego vector[],int inicio,int fin);
 void mostrarStockCritico();
 
-//Auditoria
-void listarAuditorias();
+//Reportes
+void listarReportes();
 
 //Analisis de ganancias
 float analisisGanancias(FILE *buffer,Fecha desde,Fecha hasta);
@@ -48,13 +48,13 @@ void menuReportes() {
     int opcion;
 
 ///Variables de Struct----------------------------------------
-    AuditoriaPrecio Audi1;
+    ReportesPrecio Audi1;
 
     printf("\n[Modulo Reportes - En desarrollo]\n\n");
     printf("1.Reporte de recaudacion Mensual\n");
     printf("2.Reporte de venta de mayor ganancia\n");
     printf("3.Reporte de Stock critico\n");
-    printf("4.Listar auditorias de precios\n");
+    printf("4.Listar reportes de precios\n");
     printf("5.Analisis de ganancias por fechas\n");
     printf("0.Salir del Modulo\n");
 
@@ -71,7 +71,7 @@ case 3:
     mostrarStockCritico();
 break;
 case 4:
-    listarAuditorias();
+    listarReportes();
 break;
 case 5:
     reporteGananciasPorFecha();
@@ -88,12 +88,12 @@ break;
 
 //Reporte de recaudacion mensual:
 int consultarCambioPrecio(int idJuego,int mes, int anio){
-    FILE *buffer=fopen(AUDITORIA_H,"rb");
-    AuditoriaPrecio aux;
+    FILE *buffer=fopen(REPORTES_H,"rb");
+    ReportesPrecio aux;
     if(archivo==NULL){
         return 0;
     }
-    while(fread(&aux,sizeof(AuditoriaPrecio),1,buffer)==1){
+    while(fread(&aux,sizeof(ReportesPrecio),1,buffer)==1){
         if(aux.idJuego==idJuego&&aux.fechaModificacion.mes==
            mes&&aux.fechaModificacion.anio==anio){
             fclose(buffer);
@@ -265,17 +265,17 @@ void mostrarStockCritico(){
 //que no puede bajar de 5 unidades restantes.
 //Tendria que guardar fechas de forma recursiva
 
-//Listar Auditorias
-void listarAuditorias(){
-    FILE *buffer=fopen(AUDITORIA_H,"rb");
-    AuditoriaPrecio aux;
+//Listar Reportes
+void listarReportes(){
+    FILE *buffer=fopen(REPORTES_H,"rb");
+    ReportePrecio aux;
     if(buffer==NULL){
-        printf("No existe el archivo auditoria\n");
+        printf("No existe el archivo reporte\n");
         return;
     }
-    printf("Auditoria de Precios\n");
-    while(fread(&aux,sizeof(AuditoriaPrecio),1,archivo)==1){
-    printf("ID Auditoria: %d\n",aux.idAuditoria);
+    printf("Reportes de Precios\n");
+    while(fread(&aux,sizeof(ReportesPrecio),1,archivo)==1){
+    printf("ID Reportes: %d\n",aux.idReportes);
     printf("ID Juego: %d\n",aux.idJuego);
     printf("Precio anterior: %.2f\n",aux.precioAdquisicionViejo);
     printf("Precio nuev: %.2f\n",aux.precioAdquisicionNuevo);
