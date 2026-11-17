@@ -3,7 +3,7 @@
 
 #include "estructuras.h"
 
-// Estructura auxiliar
+// Estructura auxiliar para tu punto de promoción
 typedef struct stDevolucion {
     int idDevolucion;
     int idTransaccionAnulada;
@@ -13,10 +13,10 @@ typedef struct stDevolucion {
     char motivo[100];
 } Devolucion;
 
-// Menú de mi módulo
+// Menú de tu módulo
 void menuVideojuegos();
 
-// Puntos obligatorios (3e, 3f, 3g)
+// Puntos obligatorios (3e, 3f, 3g) + Alta
 void cargarVideojuego();
 void listarVideojuegosResumen();
 void listarVideojuegosPorPlataforma();
@@ -27,7 +27,7 @@ int buscarVideojuegoPorId(int idJuego, Videojuego *juegoEncontrado);
 int actualizarStockVideojuego(int idJuego, int cambioStock);
 int obtenerUltimoIdVideojuego();
 
-// Devoluciones
+// Punto de promoción (Devoluciones)
 void registrarDevolucion();
 void listarDevoluciones();
 int transaccionYaDevuelta(int idTransaccion);
