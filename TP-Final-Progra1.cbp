@@ -31,13 +31,11 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="include/auditoria.h" />
 		<Unit filename="include/estructuras.h" />
 		<Unit filename="include/persona.h" />
 		<Unit filename="include/reportes.h" />
 		<Unit filename="include/transaccion.h" />
 		<Unit filename="include/videojuego.h" />
-		<Unit filename="src/auditoria.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/main.c">

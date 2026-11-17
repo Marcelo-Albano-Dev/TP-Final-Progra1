@@ -7,4 +7,5 @@ data/*.dat
 *.exe
 CMakeLists.txt
 cmake-build-debug/
-.idea/
+idea/
+tests/
