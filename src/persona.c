@@ -17,7 +17,6 @@ void menuPersonas() {
     do {
         system("cls || clear");
         printf("====================================\n");
-        printf("        GESTION DE PERSONAS         \n");
         printf("====================================\n");
         printf("1. Registrar nueva Persona\n");
         printf("2. Modificar datos de Persona\n");
@@ -171,7 +170,6 @@ void altaPersona() {
         printf("\nError al abrir el archivo de personas.\n");
     }
 }
-// Busca una persona activa por DNI y sobrescribe sus datos en el archivo binario
 void modificarPersonaPorDni(char dni[]) {
     FILE *arch = fopen(ARCH_PERSONAS, "r+b");
     Persona aux;
@@ -182,6 +180,7 @@ void modificarPersonaPorDni(char dni[]) {
         return;
     }
 
+    long pos = ftell(arch);
     while (fread(&aux, sizeof(Persona), 1, arch) == 1 && encontrado == 0) {
         if (strcmp(aux.dni, dni) == 0 && strcmp(aux.rol, "baja") != 0) {
             encontrado = 1;
@@ -204,11 +203,12 @@ void modificarPersonaPorDni(char dni[]) {
             aux.rol[strcspn(aux.rol, "\n")] = '\0';
 
             // Retrocede el puntero del archivo un registro para actualizar la parte necesaria
-
-            fseek(arch, -sizeof(Persona), SEEK_CUR);
+            fseek(arch, pos, SEEK_SET);
             fwrite(&aux, sizeof(Persona), 1, arch);
+            fflush(arch);
             printf("\nDatos modificados correctamente!\n");
         }
+        pos = ftell(arch);
     }
 
     if (encontrado == 0) {
@@ -217,7 +217,6 @@ void modificarPersonaPorDni(char dni[]) {
 
     fclose(arch);
 }
-// Realiza la baja logica de una persona cambiando su rol a "baja" sin eliminar el registro fisico
 void bajaLogicaPersona(char dni[]) {
     FILE *arch = fopen(ARCH_PERSONAS, "r+b");
     Persona aux;
@@ -229,6 +228,7 @@ void bajaLogicaPersona(char dni[]) {
         return;
     }
 
+    long pos = ftell(arch);
     while (fread(&aux, sizeof(Persona), 1, arch) == 1 && encontrado == 0) {
         if (strcmp(aux.dni, dni) == 0 && strcmp(aux.rol, "baja") != 0) {
             encontrado = 1;
@@ -238,13 +238,15 @@ void bajaLogicaPersona(char dni[]) {
 
             if (confirma == 's' || confirma == 'S') {
                 strcpy(aux.rol, "baja");
-                fseek(arch, (long)sizeof(Persona) * -1, SEEK_CUR);
+                fseek(arch, pos, SEEK_SET);
                 fwrite(&aux, sizeof(Persona), 1, arch);
+                fflush(arch);
                 printf("\nBaja logica realizada con exito.\n");
             } else {
                 printf("\nOperacion cancelada.\n");
             }
         }
+        pos = ftell(arch);
     }
 
     if (encontrado == 0) {
@@ -308,7 +310,7 @@ void mostrarPersonaDetallada(char dni[]) {
     fclose(arch);
 }
 
-// Crea un usuario administrador si el archivo de usuarios aun no existe:
+// Crea un usuario administrador si el archivo de usuarios aun no existe
 void inicializarAdminPorDefecto() {
     FILE *arch = fopen(ARCH_USUARIOS, "rb");
     Usuario adminDefault;
