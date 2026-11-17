@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/reportes.h"
+#include "../include/estructuras.h"
 #define ARCHIVO_VIDEOJUEGOS "videojuegos.bin"
 #define ARCHIVO_DEVOLUCIONES "devoluciones.bin"
 #define MARGEN_GANACIA 1.30f
@@ -19,10 +20,10 @@ typedef struct {
 ///Prototipado------------------------------------------------
 //Reporte de recaudacion mensual
 int consultarCambioPrecio(int idJuego,int mes, int anio);
-mostrarReporte(int idEmpleado);
+void mostrarReporte();
 
 //Venta de mayor ganancia
-ventaMayorGanancia();
+void ventaMayorGanancia();
 
 //Reporte de Stock Critico
 Videojuego *cargarStockCritico(int *cantidad);
@@ -62,7 +63,7 @@ void menuReportes() {
         scanf("%i",&opcion);
         switch(opcion){
 case 1:
-    mostrarReporte(idEmpleado);
+    mostrarReporte(stTransaccion.dniEmpleado);
 break;
 case 2:
     ventaMayorGanancia();
@@ -104,7 +105,7 @@ int consultarCambioPrecio(int idJuego,int mes, int anio){
     return 0;
 }
 
-void mostrarReporte(int idEmpleado){
+void mostrarReporte(){
     FILE *buffer=fopen(ARCH_TRANSACCIONES,"rb");
     Transaccion aux;
     int mes;
@@ -126,7 +127,7 @@ void mostrarReporte(int idEmpleado){
     }
     printf("Recaudacion mensual\n");
     printf("Perdiodo %i/%i\n",mes,anio);
-    printf("Empleado encargado del reporte: %d\n",idEmpleado);
+    printf("Empleado encargado del reporte: %s\n",stEmpleado.dniEmpleado);
     while(fread(&aux,sizeof(Transaccion),1,archivo)==1){
         if(aux.fecha.mes==mes&&aux.fecha.anio==anio){
             recaudacion+=aux.gananciaTotal;
