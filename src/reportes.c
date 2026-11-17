@@ -134,6 +134,7 @@ void mostrarReporteMensual() {
 void ventaMayorGanancia() {
     FILE *buffer = fopen(ARCH_TRANSACCIONES, "rb");
     Transaccion aux;
+    Videojuego auxV;
     Transaccion mayor;
     Videojuego juego;
     float mayorGanancia = 0.0f;
@@ -145,7 +146,7 @@ void ventaMayorGanancia() {
     }
 
     while (fread(&aux, sizeof(Transaccion), 1, buffer) == 1) {
-        float gananciaActual = (aux.precioUnitarioVenta - aux.gananciaTotal) * aux.cantidadVendida;
+        float gananciaActual = (aux.precioUnitarioVenta - auxV.precioAdquisicion) * aux.cantidadVendida;
         if (!encontrado || gananciaActual > mayorGanancia) {
             mayor = aux;
             mayorGanancia = gananciaActual;
@@ -168,7 +169,7 @@ void ventaMayorGanancia() {
         printf("ID Juego:       %d\n", juego.idJuego);
         printf("Titulo:         %s\n", juego.titulo);
     } else {
-        printf("ID Juego:       %d (No encontrado en el catalogo activo)\n", mayor.idJuego);
+        printf("ID Juego:       %d (No encontrado en el catalogo activo)\n", mayor.idJuegoVendido);
     }
 }
 
@@ -180,6 +181,7 @@ Videojuego *cargarStockCritico(int *cantidad) {
     *cantidad = 0;
 
     if (buffer == NULL) {
+        printf("No se pudo abrir el archivo o no existe");
         return NULL;
     }
 

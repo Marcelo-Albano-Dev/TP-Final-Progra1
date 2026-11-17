@@ -26,8 +26,8 @@ void listarReportesPrecio();
 void reporteGananciasPorFecha();
 
 // Funciones auxiliares de ordenamiento, recursividad y fechas
-Videojuego cargarStockCritico(int cantidad);
-void intercambiarVideojuegos(Videojuego vj1, Videojuego vj2);
+Videojuego *cargarStockCritico(int *cantidad);
+void intercambiarVideojuegos(Videojuego *vj1, Videojuego *vj2);
 int particionStock(Videojuego juegos[], int inicio, int fin);
 void quickSortStock(Videojuego juegos[], int inicio, int fin);
 float analisisGanancias(FILE *buffer, Fecha desde, Fecha hasta);
