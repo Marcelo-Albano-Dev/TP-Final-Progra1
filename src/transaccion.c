@@ -6,169 +6,146 @@
 
 #define MARGEN_GANANCIA 1.30f
 
-
-void menuTransacciones() {
+void menuTransacciones()
+{
     int idBuscado;
     int opcion;
-    do {
-        printf("==== MENU DE TRANSACCIONES ==== \n");
+    do
+    {
+        printf("\n==== MENU DE TRANSACCIONES ====\n");
         printf("1. Listado de transacciones.\n");
         printf("2. Ver transaccion especifica.\n");
         printf("3. Registrar venta.\n");
-        printf("0. Salir del programa.\n");
-        scanf("%d",&opcion);
-        switch (opcion) {
+        printf("0. Volver al menu principal.\n");
+        scanf("%d", &opcion);
+
+        switch (opcion)
+        {
             case 0:
-                printf("Saliendo del menu de transacciones\n");
+                printf("Volver al menu\n");
                 break;
             case 1:
                 listadoTransacciones("transacciones.bin");
                 break;
             case 2:
-            printf("Ingrese el ID de la transaccion a buscar: ");
-            scanf("%d", &idBuscado);
-            verTransaccionDetalle("transacciones.bin", idBuscado);
+                printf("Ingrese el ID de la transaccion a buscar: ");
+                scanf("%d", &idBuscado);
+                verTransaccionDetalle("transacciones.bin", idBuscado);
                 break;
             case 3:
-            procesarCarritoCompras("transacciones.bin");
+                procesarCarritoCompras("transacciones.bin");
                 break;
-                default:
-                printf("Opcion no valida, Seleccione una opcion valida \n");
+            default:
+                printf("Opcion no valida. Seleccione una opcion valida.\n");
                 break;
         }
-    }while(opcion!=0);
+    } while (opcion != 0);
 }
- 
 
-//* ===========================MUESTRAS DE TRANSACCIONES======================== *//
+//* =========================== MUESTRAS DE TRANSACCIONES ======================== *//
+
 void listadoTransacciones(char archivoTrans[])
 {
     FILE *buffer = fopen(archivoTrans, "rb");
-    if(buffer == NULL)
+    if (buffer == NULL)
     {
-        printf("Error al abrir el archivo\n");
+        printf("Error al abrir el archivo.\n");
+        return;
     }
-    else
-    {
-        Transaccion aux;
-        while(fread(&aux, sizeof(Transaccion), 1, buffer))
-        {
-            printf("================\n");
-            printf("Id videojuego: %d, Fecha de venta: %d/%d/%d", aux.idJuegoVendido, aux.fecha.dia,aux.fecha.mes,aux.fecha.anio);
-            printf("================\n");
-        }
-        fclose(buffer);
-    }
-}
 
+    Transaccion aux;
+    while (fread(&aux, sizeof(Transaccion), 1, buffer))
+    {
+        printf("================\n");
+        printf("ID Transaccion: %d | Id videojuego: %d | Fecha: %d/%d/%d\n",
+               aux.idTransaccion, aux.idJuegoVendido, aux.fecha.dia, aux.fecha.mes, aux.fecha.anio);
+        printf("================\n");
+    }
+    fclose(buffer);
+}
 
 void verTransaccionDetalle(char archivoTrans[], int idBuscado)
 {
     FILE *buffer = fopen(archivoTrans, "rb");
-    if(buffer == NULL)
+    if (buffer == NULL)
     {
-        printf("Error al abrir el archivo de transacciones\n");
+        printf("Error al abrir el archivo de transacciones.\n");
+        return;
     }
-    else
+
+    Transaccion aux;
+    while (fread(&aux, sizeof(Transaccion), 1, buffer) == 1)
     {
-       Transaccion aux;
-        while(fread(&aux, sizeof(Transaccion), 1, buffer)==1)
+        if (aux.idTransaccion == idBuscado)
         {
-            if(aux.idTransaccion == idBuscado)
-            {
-                mostrarTrans(aux);
-                fclose(buffer);
-                return;
-            }
+            mostrarTrans(aux);
+            fclose(buffer);
+            return;
         }
-        fclose(buffer);
-        printf("La transaccion no fue encontrada\n");
     }
+    fclose(buffer);
+    printf("La transaccion no fue encontrada.\n");
 }
 
 void mostrarTrans(Transaccion trans)
 {
     printf("\n========= DETALLES DE TRANSACCION =========\n");
-
     printf("Id: %d\n", trans.idTransaccion);
-    
     printf("Fecha: %d/%d/%d\n", trans.fecha.dia, trans.fecha.mes, trans.fecha.anio);
-    
-    printf("ID del juego vendido: %d\n",trans.idJuegoVendido);
-   
+    printf("ID del juego vendido: %d\n", trans.idJuegoVendido);
     printf("Cantidad vendida: %d\n", trans.cantidadVendida);
-    
-    printf("Precio unitario: %f\n", trans.precioUnitarioVenta);
-    
-    printf("Ganancia total: %f\n", trans.gananciaTotal);
-
-    printf("%s\n", trans.dniCliente);
-
-    printf("%s\n", trans.dniEmpleado);
-
-    printf(" ===========================================\n");
-
+    printf("Precio unitario: $%.2f\n", trans.precioUnitarioVenta);
+    printf("Ganancia total: $%.2f\n", trans.gananciaTotal);
+    printf("DNI Cliente: %s\n", trans.dniCliente);
+    printf("DNI Empleado: %s\n", trans.dniEmpleado);
+    printf("===========================================\n");
 }
 
+//* =========================== PERSISTENCIA Y AUXILIARES =========================== *//
 
-
-//* FUNCION AUXILIAR PARA GENERAR UN ID *//
 long generarIdTransaccion(char archivoTransaccion[])
 {
-    FILE * buffer = fopen(archivoTransaccion, "rb");
-    if(buffer == NULL)
-    {
-        return 0;
-    }
+    FILE *buffer = fopen(archivoTransaccion, "rb");
+    if (buffer == NULL) return 1;
+
     fseek(buffer, 0, SEEK_END);
     long bytes = ftell(buffer);
-    if(bytes<=0)
-    {
-        fclose(buffer);
-        return 0;
-    }
     fclose(buffer);
-    return bytes / (long)sizeof(Transaccion);
+
+    if (bytes <= 0) return 1;
+    return (bytes / (long)sizeof(Transaccion)) + 1;
 }
 
-//* PARA REGISTRAR UNA TRANSACCION EN EL ARCHIVO DE TRANSACCIONES *//
 int registrarTransaccion(char archivoTransacciones[], Transaccion trans, int idJuego, int cantidadVendida)
 {
-    FILE *buffer = fopen(archivoTransacciones, "ab");
-    if (buffer == NULL)
-    {
-        return -1; // Fallo al abrir archivo
-    }
-
-    if (fwrite(&trans, sizeof(Transaccion), 1, buffer) != 1)
-    {
-        fclose(buffer);
-        return -1; // Fallo en la escritura
-    }
-    fclose(buffer);
-
     if (actualizarStockVideojuego(idJuego, -cantidadVendida) == 0)
     {
         return -3; // Fallo al descontar stock
     }
 
-    return 1; // Registro exitoso
+    FILE *buffer = fopen(archivoTransacciones, "ab");
+    if (buffer == NULL) return -1;
+
+    if (fwrite(&trans, sizeof(Transaccion), 1, buffer) != 1)
+    {
+        fclose(buffer);
+        return -1;
+    }
+    fclose(buffer);
+    return 1;
 }
 
-//* AUXILIAR PARA USAR EN EL CARRITO *//
+//* =========================== CARRITO DE COMPRAS =========================== *//
+
 int buscarIndiceEnCarrito(ItemCarrito *carrito, int cantItems, int idBuscado)
 {
     for (int i = 0; i < cantItems; i++)
     {
-        if (carrito[i].idJuego == idBuscado)
-        {
-            return i;
-        }
+        if (carrito[i].idJuego == idBuscado) return i;
     }
     return -1;
 }
 
-//* FUNCION AUXILIAR PARA REDIMENSIONAR UN ARREGLO *//
 ItemCarrito* redimensionCarrito(ItemCarrito *carrito, int *cantItems, ItemCarrito nuevoItem)
 {
     ItemCarrito *temp = realloc(carrito, (*cantItems + 1) * sizeof(ItemCarrito));
@@ -183,11 +160,9 @@ ItemCarrito* redimensionCarrito(ItemCarrito *carrito, int *cantItems, ItemCarrit
     carrito = temp;
     carrito[*cantItems] = nuevoItem;
     (*cantItems)++;
-
     return carrito;
 }
 
-//* CARRITO DE COMPRAS *//
 ItemCarrito* cargarItemsCarrito(int *cantItems)
 {
     ItemCarrito *carrito = NULL;
@@ -255,17 +230,25 @@ int procesarCarritoCompras(char archivoTransacciones[])
     Transaccion base;
     printf("\n=== DATOS DE FACTURACION ===\n");
     printf("DNI del cliente: ");
-    scanf(" %s", base.dniCliente);
+    scanf(" %14s", base.dniCliente);
     printf("DNI del empleado: ");
-    scanf(" %s", base.dniEmpleado);
+    scanf(" %14s", base.dniEmpleado);
+
     printf("Fecha (Dia Mes Anio): ");
     scanf("%d %d %d", &base.fecha.dia, &base.fecha.mes, &base.fecha.anio);
+    while (base.fecha.dia < 1 || base.fecha.dia > 31 ||
+           base.fecha.mes < 1 || base.fecha.mes > 12 ||
+           base.fecha.anio < 2000 || base.fecha.anio > 2100)
+    {
+        printf("Fecha invalida. Reingrese (Dia Mes Anio): ");
+        scanf("%d %d %d", &base.fecha.dia, &base.fecha.mes, &base.fecha.anio);
+    }
 
     int idBase = (int)generarIdTransaccion(archivoTransacciones);
 
     for (int i = 0; i < cantItems; i++)
     {
-        Transaccion trans = base; // Copia DNI cliente, DNI empleado y fecha de una sola vez
+        Transaccion trans = base;
         trans.idTransaccion = idBase + i;
         trans.idJuegoVendido = carrito[i].idJuego;
         trans.cantidadVendida = carrito[i].cantidad;
@@ -279,6 +262,6 @@ int procesarCarritoCompras(char archivoTransacciones[])
     }
 
     free(carrito);
-    printf("\n Venta finalizada, %d productos registrados.\n", cantItems);
+    printf("\nVenta finalizada, %d productos registrados.\n", cantItems);
     return 1;
 }
