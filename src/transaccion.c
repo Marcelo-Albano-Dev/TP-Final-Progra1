@@ -21,7 +21,7 @@ void menuTransacciones() {
 
         switch (opcion) {
             case 0:
-                printf("Volver al menu\n");
+                printf("Volviendo al menu principal...\n");
                 break;
             case 1:
                 listadoTransacciones(ARCH_TRANSACCIONES);
@@ -57,7 +57,7 @@ void listadoTransacciones(char archivoTrans[]) {
         while (fread(&aux, sizeof(Transaccion), 1, buffer) == 1) {
             printf("================================================\n");
             printf("ID Transaccion: #%d | ID Videojuego: %d | Cant: %d | Fecha: %02d/%02d/%d\n",
-                   aux.idTransaccion, aux.idJuego, aux.cantidadVendida,
+                   aux.idTransaccion, aux.idJuegoVendido, aux.cantidadVendida,
                    aux.fecha.dia, aux.fecha.mes, aux.fecha.anio);
         }
         printf("================================================\n");
@@ -84,15 +84,13 @@ void verTransaccionDetalle(char archivoTrans[], int idBuscado) {
 }
 
 void mostrarTrans(Transaccion trans) {
-    float gananciaTotal = (trans.precioUnitarioVenta - trans.precioAdquisicionAlVender) * trans.cantidadVendida;
-
     printf("\n========= DETALLES DE TRANSACCION =========\n");
     printf("ID Transaccion:   #%d\n", trans.idTransaccion);
     printf("Fecha:            %02d/%02d/%d\n", trans.fecha.dia, trans.fecha.mes, trans.fecha.anio);
-    printf("ID Juego vendido: %d\n", trans.idJuego);
+    printf("ID Juego vendido: %d\n", trans.idJuegoVendido);
     printf("Cantidad vendida: %d\n", trans.cantidadVendida);
     printf("Precio unitario:  $%.2f\n", trans.precioUnitarioVenta);
-    printf("Ganancia neta:    $%.2f\n", gananciaTotal);
+    printf("Ganancia neta:    $%.2f\n", trans.gananciaTotal);
     printf("DNI Cliente:      %s\n", trans.dniCliente);
     printf("DNI Empleado:     %s\n", trans.dniEmpleado);
     printf("===========================================\n");
@@ -106,14 +104,12 @@ long generarIdTransaccion(char archivoTransaccion[]) {
     }
     fseek(buffer, 0, SEEK_END);
     long bytes = ftell(buffer);
-    if (bytes <= 0) {
-        fclose(buffer);
-        return 0;
-    }
     fclose(buffer);
 
-    if (bytes <= 0) return 1;
-    return (bytes / (long)sizeof(Transaccion)) + 1;
+    if (bytes <= 0) {
+        return 0;
+    }
+    return bytes / (long)sizeof(Transaccion);
 }
 
 //* PARA REGISTRAR UNA TRANSACCION EN EL ARCHIVO DE TRANSACCIONES *//
@@ -122,16 +118,15 @@ int registrarTransaccion(char archivoTransacciones[], Transaccion trans, int idJ
     if (buffer == NULL) {
         return -1; // Fallo al abrir archivo
     }
-
+    if (actualizarStockVideojuego(idJuego, -cantidadVendida) == 0) {
+        return -3; // Fallo al descontar stock
+    }
+    
     if (fwrite(&trans, sizeof(Transaccion), 1, buffer) != 1) {
         fclose(buffer);
         return -1;
     }
     fclose(buffer);
-
-    if (actualizarStockVideojuego(idJuego, -cantidadVendida) == 0) {
-        return -3; // Fallo al descontar stock
-    }
 
     return 1; // Registro exitoso
 }
@@ -246,6 +241,12 @@ int procesarCarritoCompras(char archivoTransacciones[]) {
     printf("Fecha (Dia Mes Anio): ");
     scanf("%d %d %d", &base.fecha.dia, &base.fecha.mes, &base.fecha.anio);
     while (getchar() != '\n');
+    while (base.fecha.dia < 1 || base.fecha.dia > 31 || base.fecha.mes < 1 || base.fecha.mes > 12 || base.fecha.anio < 2000 || base.fecha.anio > 2100) 
+    {
+       printf("Fecha invalida. Reingrese (Dia Mes Anio): ");
+       scanf("%d %d %d", &base.fecha.dia, &base.fecha.mes, &base.fecha.anio);
+       while (getchar() != '\n');
+    }
 
     // Consulta descuento VIP acumulado del cliente
     float descVip = calcularDescuentoVipCliente(base.dniCliente);
@@ -260,15 +261,15 @@ int procesarCarritoCompras(char archivoTransacciones[]) {
     for (int i = 0; i < cantItems; i++) {
         Transaccion trans = base;
         trans.idTransaccion = idBase + i + 1;
-        trans.idJuego = carrito[i].idJuego;
+        trans.idJuegoVendido = carrito[i].idJuego;
         trans.cantidadVendida = carrito[i].cantidad;
-        trans.precioAdquisicionAlVender = carrito[i].precioAdquisicion;
         trans.precioUnitarioVenta = (carrito[i].precioAdquisicion * MARGEN_GANANCIA) * (1.0f - descVip);
+        trans.gananciaTotal = (trans.precioUnitarioVenta - carrito[i].precioAdquisicion) * trans.cantidadVendida;
 
         totalTicket += trans.precioUnitarioVenta * trans.cantidadVendida;
 
-        if (registrarTransaccion(archivoTransacciones, trans, trans.idJuego, trans.cantidadVendida) != 1) {
-            printf("Error al registrar el juego ID %d.\n", trans.idJuego);
+        if (registrarTransaccion(archivoTransacciones, trans, trans.idJuegoVendido, trans.cantidadVendida) != 1) {
+            printf("Error al registrar el juego ID %d.\n", trans.idJuegoVendido);
         }
     }
 
