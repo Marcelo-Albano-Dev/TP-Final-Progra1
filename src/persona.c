@@ -23,6 +23,11 @@ void menuPersonas() {
         printf("5. Buscar Persona por DNI (Detalle)\n");
         printf("0. Volver al Menu Principal\n");
         printf("------------------------------------\n");
+        printf("6. Registrar Usuario (Empleados)\n");
+        printf("7. Ver Listado de Usuarios\n");
+        printf("8. Probar Inicio de Sesion (Login)\n");
+        printf("0. Volver al Menu Principal\n");
+        printf("------------------------------------\n");
         printf("Ingrese una opcion: ");
         scanf("%d", &opcion);
         limpiarBufferPersona();
@@ -51,6 +56,20 @@ void menuPersonas() {
                 fgets(dniBuscado, sizeof(dniBuscado), stdin);
                 dniBuscado[strcspn(dniBuscado, "\n")] = '\0';
                 mostrarPersonaDetallada(dniBuscado);
+                break;
+            case 6:
+                altaUsuario();
+                break;
+            case 7:
+                listarUsuarios();
+                break;
+            case 8:
+                if (iniciarSesion(&usuarioActivo) == 1) {
+                    printf("\nLogin exitoso! Bienvenido/a %s (Rol: %s)\n",
+                           usuarioActivo.persona.nombre, usuarioActivo.persona.rol);
+                } else {
+                    printf("\nUsuario o contrasenia incorrectos.\n");
+                }
                 break;
             case 0:
                 break;
@@ -258,3 +277,146 @@ void mostrarPersonaDetallada(char dni[]) {
 
     fclose(arch);
 }
+
+// Crea un usuario administrador si el archivo de usuarios aun no existe:
+void inicializarAdminPorDefecto() {
+    FILE *arch = fopen(ARCH_USUARIOS, "rb");
+    Usuario adminDefault;
+
+    if (arch == NULL) {
+        arch = fopen(ARCH_USUARIOS, "wb");
+        if (arch != NULL) {
+            strcpy(adminDefault.usuario, "admin");
+            strcpy(adminDefault.contrasenia, "1234");
+            strcpy(adminDefault.persona.dni, "00000000");
+            strcpy(adminDefault.persona.nombre, "Administrador General");
+            strcpy(adminDefault.persona.telefono, "000-0000");
+            strcpy(adminDefault.persona.direccion, "Local Pixel Plus");
+            strcpy(adminDefault.persona.rol, "admin");
+
+            fwrite(&adminDefault, sizeof(Usuario), 1, arch);
+            fclose(arch);
+        }
+    } else {
+        fclose(arch);
+    }
+}
+
+// Verifica si un nombre de usuario ya esta ocupado en el sistema
+int existeNombreUsuario(char nombreUsuario[]) {
+    FILE *arch = fopen(ARCH_USUARIOS, "rb");
+    Usuario aux;
+    int existe = 0;
+
+    if (arch != NULL) {
+        while (fread(&aux, sizeof(Usuario), 1, arch) == 1 && existe == 0) {
+            if (strcmp(aux.usuario, nombreUsuario) == 0) {
+                existe = 1;
+            }
+        }
+        fclose(arch);
+    }
+
+    return existe;
+}
+
+// Vincula una persona existente (empleado o admin) a una nueva cuenta de usuario
+void altaUsuario() {
+    Usuario nuevo;
+    Persona emp;
+    char dniEmp[15];
+    FILE *arch;
+
+    printf("\n--- ALTA DE USUARIO DEL SISTEMA ---\n");
+    printf("Ingrese DNI del empleado ya registrado: ");
+    fgets(dniEmp, 15, stdin);
+    dniEmp[strcspn(dniEmp, "\n")] = '\0';
+
+    if (buscarPersonaPorDni(dniEmp, &emp) == 0) {
+        printf("\nError: No existe una persona activa con ese DNI. Registrela primero.\n");
+        return;
+    }
+
+    if (strcmp(emp.rol, "cliente") == 0) {
+        printf("\nError: Un cliente no puede tener cuenta de usuario del sistema.\n");
+        return;
+    }
+
+    nuevo.persona = emp;
+
+    printf("Nombre de usuario: ");
+    fgets(nuevo.usuario, 20, stdin);
+    nuevo.usuario[strcspn(nuevo.usuario, "\n")] = '\0';
+
+    if (existeNombreUsuario(nuevo.usuario) == 1) {
+        printf("\nError: Ese nombre de usuario ya existe.\n");
+        return;
+    }
+
+    printf("Contrasenia: ");
+    fgets(nuevo.contrasenia, 20, stdin);
+    nuevo.contrasenia[strcspn(nuevo.contrasenia, "\n")] = '\0';
+
+    arch = fopen(ARCH_USUARIOS, "ab");
+    if (arch != NULL) {
+        fwrite(&nuevo, sizeof(Usuario), 1, arch);
+        fclose(arch);
+        printf("\nUsuario creado con exito para %s!\n", nuevo.persona.nombre);
+    } else {
+        printf("\nError al guardar en el archivo de usuarios.\n");
+    }
+}
+
+// Muestra los usuarios registrados junto con los datos de su persona asociada
+void listarUsuarios() {
+    FILE *arch = fopen(ARCH_USUARIOS, "rb");
+    Usuario aux;
+
+    if (arch == NULL) {
+        printf("\nNo hay usuarios registrados.\n");
+        return;
+    }
+
+    printf("\n--- LISTADO DE USUARIOS ---\n");
+    while (fread(&aux, sizeof(Usuario), 1, arch) == 1) {
+        printf("Usuario: %s | Nombre: %s | DNI: %s | Rol: %s\n",
+               aux.usuario, aux.persona.nombre, aux.persona.dni, aux.persona.rol);
+    }
+
+    fclose(arch);
+}
+
+// Valida credenciales contra el archivo binario y carga el Usuario por puntero
+int iniciarSesion(Usuario *usuarioLogueado) {
+    FILE *arch = fopen(ARCH_USUARIOS, "rb");
+    Usuario aux;
+    char userIngresado[20];
+    char passIngresada[20];
+    int acceso = 0;
+
+    if (arch == NULL) {
+        printf("\nError: No se encuentra la base de usuarios.\n");
+        return 0;
+    }
+
+    printf("\n--- INICIO DE SESION ---\n");
+    printf("Usuario: ");
+    fgets(userIngresado, 20, stdin);
+    userIngresado[strcspn(userIngresado, "\n")] = '\0';
+
+    printf("Contrasenia: ");
+    fgets(passIngresada, 20, stdin);
+    passIngresada[strcspn(passIngresada, "\n")] = '\0';
+
+    while (fread(&aux, sizeof(Usuario), 1, arch) == 1 && acceso == 0) {
+        if (strcmp(aux.usuario, userIngresado) == 0 &&
+            strcmp(aux.contrasenia, passIngresada) == 0) {
+            *usuarioLogueado = aux;
+            acceso = 1;
+        }
+    }
+
+    fclose(arch);
+    return acceso;
+}
+
