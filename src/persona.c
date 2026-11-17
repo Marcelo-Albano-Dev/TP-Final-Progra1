@@ -319,22 +319,30 @@ void inicializarAdminPorDefecto() {
     FILE *arch = fopen(ARCH_USUARIOS, "rb");
     Usuario adminDefault;
 
+    strcpy(adminDefault.usuario, "admin");
+    strcpy(adminDefault.contrasenia, "1234");
+    strcpy(adminDefault.persona.dni, "00000000");
+    strcpy(adminDefault.persona.nombre, "Administrador General");
+    strcpy(adminDefault.persona.telefono, "000-0000");
+    strcpy(adminDefault.persona.direccion, "Local Pixel Plus");
+    strcpy(adminDefault.persona.rol, "admin");
+
     if (arch == NULL) {
         arch = fopen(ARCH_USUARIOS, "wb");
         if (arch != NULL) {
-            strcpy(adminDefault.usuario, "admin");
-            strcpy(adminDefault.contrasenia, "1234");
-            strcpy(adminDefault.persona.dni, "00000000");
-            strcpy(adminDefault.persona.nombre, "Administrador General");
-            strcpy(adminDefault.persona.telefono, "000-0000");
-            strcpy(adminDefault.persona.direccion, "Local Pixel Plus");
-            strcpy(adminDefault.persona.rol, "admin");
-
             fwrite(&adminDefault, sizeof(Usuario), 1, arch);
             fclose(arch);
         }
     } else {
         fclose(arch);
+    }
+
+    if (existePersonaPorDni("00000000") == 0) {
+        FILE *archPers = fopen(ARCH_PERSONAS, "ab");
+        if (archPers != NULL) {
+            fwrite(&adminDefault.persona, sizeof(Persona), 1, archPers);
+            fclose(archPers);
+        }
     }
 }
 
@@ -426,6 +434,7 @@ void listarUsuarios() {
 int iniciarSesion(Usuario *usuarioLogueado) {
     FILE *arch = fopen(ARCH_USUARIOS, "rb");
     Usuario aux;
+    Persona pActiva;
     char userIngresado[20];
     char passIngresada[20];
     int acceso = 0;
@@ -446,7 +455,8 @@ int iniciarSesion(Usuario *usuarioLogueado) {
 
     while (fread(&aux, sizeof(Usuario), 1, arch) == 1 && acceso == 0) {
         if (strcmp(aux.usuario, userIngresado) == 0 &&
-            strcmp(aux.contrasenia, passIngresada) == 0) {
+            strcmp(aux.contrasenia, passIngresada) == 0 &&
+            buscarPersonaPorDni(aux.persona.dni, &pActiva) == 1) {
             *usuarioLogueado = aux;
             acceso = 1;
         }

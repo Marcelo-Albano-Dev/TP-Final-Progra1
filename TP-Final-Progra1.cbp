@@ -36,8 +36,6 @@
 		<Unit filename="include/reportes.h" />
 		<Unit filename="include/transaccion.h" />
 		<Unit filename="include/videojuego.h" />
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="src/main.c">
 			<Option compilerVar="CC" />
 		</Unit>

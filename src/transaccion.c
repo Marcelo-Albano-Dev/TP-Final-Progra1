@@ -128,20 +128,22 @@ long generarIdTransaccion(char archivoTransaccion[]) {
 
 //* PARA REGISTRAR UNA TRANSACCION EN EL ARCHIVO DE TRANSACCIONES *//
 int registrarTransaccion(char archivoTransacciones[], Transaccion trans, int idJuego, int cantidadVendida) {
+    if (actualizarStockVideojuego(idJuego, -cantidadVendida) == 0) {
+        return -3; // Fallo al descontar stock
+    }
+
     FILE *buffer = fopen(archivoTransacciones, "ab");
     if (buffer == NULL) {
+        actualizarStockVideojuego(idJuego, cantidadVendida); // Revierte stock si falla archivo
         return -1; // Fallo al abrir archivo
     }
 
     if (fwrite(&trans, sizeof(Transaccion), 1, buffer) != 1) {
         fclose(buffer);
+        actualizarStockVideojuego(idJuego, cantidadVendida);
         return -1;
     }
     fclose(buffer);
-
-    if (actualizarStockVideojuego(idJuego, -cantidadVendida) == 0) {
-        return -3; // Fallo al descontar stock
-    }
 
     return 1; // Registro exitoso
 }

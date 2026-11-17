@@ -449,21 +449,31 @@ void registrarDevolucion() {
         return;
     }
 
-    int idJuego = 0;
-    int cantidad = 0;
-    printf("Ingrese ID del juego asociado: ");
-    scanf("%d", &idJuego);
-    limpiarBufferVideojuego();
+    FILE *fTrans = fopen(ARCH_TRANSACCIONES, "rb");
+    if (fTrans == NULL) {
+        printf("\n[!] ERROR | No hay transacciones registradas en el sistema.\n");
+        return;
+    }
 
-    printf("Ingrese cantidad de unidades a reintegrar: ");
-    scanf("%d", &cantidad);
-    limpiarBufferVideojuego();
+    Transaccion tAux;
+    int ventaEncontrada = 0;
+    while (fread(&tAux, sizeof(Transaccion), 1, fTrans) == 1 && ventaEncontrada == 0) {
+        if (tAux.idTransaccion == idTransaccion) {
+            ventaEncontrada = 1;
+        }
+    }
+    fclose(fTrans);
+
+    if (ventaEncontrada == 0) {
+        printf("\n[!] ERROR | No existe ninguna venta con ID #%d.\n", idTransaccion);
+        return;
+    }
 
     Devolucion nueva;
     nueva.idDevolucion = obtenerUltimoIdDevolucion() + 1;
     nueva.idTransaccionAnulada = idTransaccion;
-    nueva.idJuego = idJuego;
-    nueva.cantidadDevuelta = cantidad;
+    nueva.idJuego = tAux.idJuegoVendido;
+    nueva.cantidadDevuelta = tAux.cantidadVendida;
 
     do {
         printf("FECHA DE DEVOLUCION [DIA MES ANIO]: ");
@@ -483,8 +493,8 @@ void registrarDevolucion() {
         if (file != NULL) {
             fwrite(&nueva, sizeof(Devolucion), 1, file);
             fclose(file);
-            printf("\nDevolucion #%d registrada. Se han devuelto al stock (%d unidades).\n",
-                   nueva.idDevolucion, nueva.cantidadDevuelta);
+            printf("\nDevolucion #%d registrada. Se han devuelto al stock (%d unidades del juego ID %d).\n",
+                   nueva.idDevolucion, nueva.cantidadDevuelta, nueva.idJuego);
         }
     } else {
         printf("\n[!] ERROR | NO SE ENCONTRO EL VIDEOJUEGO ID %d PARA ACTUALIZAR EL STOCK\n", nueva.idJuego);
