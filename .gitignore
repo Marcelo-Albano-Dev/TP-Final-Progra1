@@ -5,3 +5,5 @@ obj/
 data/*.dat
 .vscode/
 *.exe
+CMakeLists.txt
+cmake-build-debug/
